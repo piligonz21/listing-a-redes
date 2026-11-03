@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Listing a Redes</title>
+<meta name="description" content="Pegá el link de una propiedad y obtené el carrusel, las historias y la portada de reel para Instagram.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;800&family=Manrope:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* Layout: herramienta de dos columnas. Formulario a la izquierda, piezas renderizadas a la derecha; en celular se apilan. */
+:root{
+  --bg:#F4F1EC; --panel:#FFFFFF; --ink:#211812; --muted:#7A6E66; --line:#E3DCD3;
+  --accent:#5A0F14; --accent-ink:#FFFFFF; --warn-bg:#FBF0DC; --warn:#8A5A00; --ok:#2F6B3A;
+  --display:"Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --body:"Manrope", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17110E; --panel:#211915; --ink:#F2EADF; --muted:#A99C92; --line:#3A2E27;
+  --accent:#C9727A; --accent-ink:#17110E; --warn-bg:#3A2C14; --warn:#F0C27A; --ok:#8FCB98; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17110E; --panel:#211915; --ink:#F2EADF; --muted:#A99C92; --line:#3A2E27;
+  --accent:#C9727A; --accent-ink:#17110E; --warn-bg:#3A2C14; --warn:#F0C27A; --ok:#8FCB98; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:24px}
+header.top h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,4vw,44px);line-height:1;letter-spacing:-.02em;margin:0;text-wrap:balance}
+header.top p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;min-width:0}
+.panel + .panel{margin-top:16px}
+.step{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 4px}
+h2{font-family:var(--display);font-weight:800;font-size:19px;margin:0 0 14px;letter-spacing:-.01em}
+label{display:block;font-size:13px;font-weight:600;margin:0 0 4px}
+.hint{font-size:12.5px;color:var(--muted);margin:4px 0 0}
+input[type=text],input[type=url],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+textarea{resize:vertical;min-height:90px}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fields .full{grid-column:1/-1}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-weight:700;border-radius:9px;padding:9px 14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+.drop{border:1.5px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--muted);cursor:pointer}
+.drop.over{border-color:var(--accent);color:var(--ink)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;margin-top:10px}
+.thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:2px solid transparent;max-width:100%}
+.thumb.cover{border-color:var(--accent)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .tag{position:absolute;left:4px;top:4px;background:var(--accent);color:var(--accent-ink);font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px}
+.thumb .x{position:absolute;right:3px;top:3px;padding:0 6px;font-size:12px;line-height:18px;border-radius:5px;background:rgba(0,0,0,.6);color:#fff;border:0}
+.thumb .mv{position:absolute;bottom:3px;left:3px;right:3px;display:flex;justify-content:space-between}
+.thumb .mv button{padding:0 6px;font-size:12px;line-height:18px;border-radius:5px;background:rgba(0,0,0,.6);color:#fff;border:0}
+.styles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.style-opt{border:1.5px solid var(--line);border-radius:10px;padding:8px;cursor:pointer;text-align:left;background:var(--bg)}
+.style-opt[aria-pressed="true"]{border-color:var(--accent)}
+.sw{display:flex;height:26px;border-radius:6px;overflow:hidden;margin-bottom:6px}
+.sw span{flex:1}
+.style-opt b{display:block;font-size:12.5px}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px}
+.warn ul{margin:4px 0 0;padding-left:18px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.out{display:grid;gap:14px}
+.out.feed{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.out.tall{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+figure{margin:0;min-width:0}
+figure img{width:100%;height:auto;display:block;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+figcaption{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:6px}
+figcaption button{padding:4px 9px;font-size:12px}
+.copybox{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px;min-width:0;overflow-wrap:anywhere}
+.status{font-size:13px;color:var(--muted);min-height:1.4em}
+.status.ok{color:var(--ok)}
+.check li{margin-bottom:4px}
+.foot{margin-top:28px;font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Listing a Redes</h1>
+      <p>Pegá el aviso de una propiedad, subí las fotos y bajá el carrusel 4:5, las historias y la portada del reel, con los textos en español e inglés.</p>
+    </div>
+    <div class="row"><button id="btnZip" class="primary">Descargar todo (.zip)</button></div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <section class="panel">
+        <p class="step">Paso 1</p>
+        <h2>El aviso</h2>
+        <div class="stack">
+          <div>
+            <label for="src">Link del aviso</label>
+            <div class="row" style="flex-wrap:nowrap"><input id="src" type="url" placeholder="https://..."><button id="btnLink" class="primary">Leer link</button></div>
+            <p class="hint">Saca las fotos y los datos solo. Lo que no encuentre queda en blanco y te avisa.</p>
+          </div>
+          <div id="linkStatus" class="status" role="status"></div>
+          <div>
+            <label for="raw">¿No se pudo leer? Pegá el texto del aviso</label>
+            <textarea id="raw" rows="6" placeholder="Copiá y pegá la descripción y los datos del aviso (precio, m², dormitorios...)"></textarea>
+            <p class="hint">Zonaprop suele bloquear la lectura automática. Probá con el aviso en la web de la inmobiliaria o pegá el texto.</p>
+          </div>
+          <div class="row">
+            <button id="btnParse">Leer datos del texto</button>
+          </div>
+          <div id="parseStatus" class="status" role="status"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <p class="step">Paso 2</p>
+        <h2>Ficha</h2>
+        <div class="fields">
+          <div class="full"><label for="f_title">Titular</label><input id="f_title" type="text"></div>
+          <div><label for="f_op">Operación</label>
+            <select id="f_op"><option value="venta">Venta</option><option value="alquiler">Alquiler</option><option value="temporario">Alquiler temporario</option></select></div>
+          <div><label for="f_type">Tipo</label><input id="f_type" type="text" placeholder="Casa, depto, lote"></div>
+          <div class="full"><label for="f_loc">Barrio y ciudad</label><input id="f_loc" type="text"></div>
+          <div class="full"><label for="f_price">Precio</label><input id="f_price" type="text" placeholder="USD 450.000 o vacío = a consultar"></div>
+          <div><label for="f_m2">m² cubiertos</label><input id="f_m2" type="text"></div>
+          <div><label for="f_lot">m² terreno / totales</label><input id="f_lot" type="text"></div>
+          <div><label for="f_amb">Ambientes</label><input id="f_amb" type="text"></div>
+          <div><label for="f_dorm">Dormitorios</label><input id="f_dorm" type="text"></div>
+          <div><label for="f_bath">Baños</label><input id="f_bath" type="text"></div>
+          <div><label for="f_car">Cocheras</label><input id="f_car" type="text"></div>
+          <div class="full"><label for="f_hl">Puntos fuertes (uno por línea, hasta 4)</label><textarea id="f_hl" rows="4"></textarea></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <p class="step">Paso 3</p>
+        <h2>Fotos</h2>
+        <div id="drop" class="drop" tabindex="0" role="button" aria-label="Subir fotos">Tocá para elegir fotos o arrastralas acá<br><small>La primera es la portada. Usá ‹ › para ordenarlas.</small></div>
+        <input id="photoInput" type="file" accept="image/*" multiple hidden>
+        <div id="thumbs" class="thumbs"></div>
+      </section>
+
+      <section class="panel">
+        <p class="step">Paso 4</p>
+        <h2>Marca y estilo</h2>
+        <div class="stack">
+          <div class="styles" id="styles"></div>
+          <div class="fields">
+            <div><label for="f_lang">Idioma del diseño</label>
+              <select id="f_lang"><option value="es">Español</option><option value="en">English</option></select></div>
+            <div><label for="f_accent">Color de acento</label><input id="f_accent" type="color" value="#5A0F14" style="height:40px;padding:4px"></div>
+            <div><label for="f_brand">Marca / inmobiliaria</label><input id="f_brand" type="text"></div>
+            <div><label for="f_handle">@ o WhatsApp</label><input id="f_handle" type="text"></div>
+            <div class="full"><label for="f_cta">Llamado a la acción</label><input id="f_cta" type="text" placeholder="Escribinos por DM y coordinamos tu visita"></div>
+            <div class="full"><label for="f_credit">Crédito (opcional)</label><input id="f_credit" type="text" placeholder="Propiedad publicada por ..."></div>
+          </div>
+          <div>
+            <label for="logoInput">Logo (PNG con fondo transparente)</label>
+            <div class="row"><input id="logoInput" type="file" accept="image/*"><button id="logoClear" hidden>Quitar logo</button></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <div id="missing" class="warn" hidden></div>
+        <div class="tabs" role="tablist" style="margin-top:14px">
+          <button role="tab" data-tab="feed" aria-selected="true">Carrusel 4:5</button>
+          <button role="tab" data-tab="stories" aria-selected="false">Historias</button>
+          <button role="tab" data-tab="reel" aria-selected="false">Portada reel</button>
+          <button role="tab" data-tab="copy" aria-selected="false">Textos</button>
+          <button role="tab" data-tab="check" aria-selected="false">Antes de publicar</button>
+        </div>
+        <div id="tab-feed" class="out feed"></div>
+        <div id="tab-stories" class="out tall" hidden></div>
+        <div id="tab-reel" class="out tall" hidden></div>
+        <div id="tab-copy" hidden>
+          <div class="stack">
+            <div class="row" style="justify-content:space-between"><h2 style="margin:0">Caption en español</h2><button data-copy="capES">Copiar</button></div>
+            <div id="capES" class="copybox"></div>
+            <div class="row" style="justify-content:space-between"><h2 style="margin:0">Caption in English</h2><button data-copy="capEN">Copy</button></div>
+            <div id="capEN" class="copybox"></div>
+            <div class="row" style="justify-content:space-between"><h2 style="margin:0">Texto alternativo de las fotos</h2><button data-copy="altTxt">Copiar</button></div>
+            <div id="altTxt" class="copybox"></div>
+          </div>
+        </div>
+        <div id="tab-check" hidden>
+          <h2>Revisá antes de publicar</h2>
+          <ul class="check">
+            <li><b>Permiso de las fotos.</b> Confirmá que la inmobiliaria o el dueño te dejan usarlas. Si tienen marca de agua de un portal, pedí las originales.</li>
+            <li><b>Datos.</b> Todo lo que está en el diseño sale de la ficha. Verificá precio, m² y ambientes con la inmobiliaria.</li>
+            <li><b>Fotos.</b> Mirá que las verticales estén derechas, que haya buena luz y que no haya cosas tiradas. No retoques nada que cambie cómo es la propiedad.</li>
+            <li><b>Contacto.</b> El llamado a la acción tiene que llevar a quien atiende las consultas (tu DM o el WhatsApp de la inmobiliaria).</li>
+            <li><b>Condiciones.</b> Si el aviso aclara algo (apto crédito, venta condicionada, expensas), sumalo al caption.</li>
+          </ul>
+        </div>
+        <div id="saveStatus" class="status" role="status" style="margin-top:12px"></div>
+      </section>
+      <p class="foot">Los diseños se arman en tu navegador. Usá solo fotos que tengas permiso de publicar. Hecho por GSC Studio.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const STYLES = {
+  editorial:{name:"Editorial oscuro", bg:"#2B1E17", alt:"#F2EADF", ink:"#F2EADF", altInk:"#2B1E17", muted:"#BFAF9F", accent:"#5A0F14"},
+  crema:{name:"Crema", bg:"#F2EADF", alt:"#2B1E17", ink:"#2B1E17", altInk:"#F2EADF", muted:"#8A7A6C", accent:"#5A0F14"},
+  blanco:{name:"Blanco agencia", bg:"#FFFFFF", alt:"#121212", ink:"#121212", altInk:"#FFFFFF", muted:"#8A8580", accent:"#A60C0C"}
+};
+const T = {
+  es:{venta:"En venta", alquiler:"En alquiler", temporario:"Alquiler temporario", facts:"Datos clave", m2:"m² cubiertos", lot:"m² terreno", amb:"ambientes", dorm:"dormitorios", bath:"baños", car:"cocheras", ask:"Precio a consultar", visit:"Coordiná tu visita", cta:"Escribinos y te pasamos la ficha completa", swipe:"Deslizá →", price:"Precio"},
+  en:{venta:"For sale", alquiler:"For rent", temporario:"Short-term rental", facts:"Key facts", m2:"sq m built", lot:"sq m lot", amb:"rooms", dorm:"bedrooms", bath:"bathrooms", car:"parking", ask:"Price on request", visit:"Book a visit", cta:"Send us a message for the full listing", swipe:"Swipe →", price:"Price"}
+};
+const S = {style:"editorial", photos:[], logo:null};
+const out = {feed:[], stories:[], reel:[]};
+
+/* ---------- estilos ---------- */
+const stylesEl = $("styles");
+Object.entries(STYLES).forEach(([k,v])=>{
+  const b=document.createElement("button"); b.type="button"; b.className="style-opt"; b.dataset.k=k;
+  b.innerHTML=`<div class="sw"><span style="background:${v.bg}"></span><span style="background:${v.alt}"></span><span style="background:${v.accent}"></span></div><b>${v.name}</b>`;
+  b.onclick=()=>{S.style=k; $("f_accent").value=v.accent; markStyle(); schedule();};
+  stylesEl.appendChild(b);
+});
+function markStyle(){stylesEl.querySelectorAll(".style-opt").forEach(b=>b.setAttribute("aria-pressed", b.dataset.k===S.style));}
+markStyle();
+
+/* ---------- ejemplo inicial ---------- */
+const SAMPLE = {f_title:"Casa con jardín y pileta", f_type:"Casa", f_loc:"Ejemplo · Zona Norte", f_price:"", f_m2:"220", f_lot:"600", f_amb:"5", f_dorm:"3", f_bath:"2", f_car:"2", f_hl:"Jardín con pileta\nLiving con doble altura\nCocina integrada al comedor\nGalería con parrilla", f_brand:"Tu inmobiliaria", f_handle:"@tuinmobiliaria", f_cta:""};
+Object.entries(SAMPLE).forEach(([k,v])=>{$(k).value=v;});
+$("parseStatus").textContent="Estás viendo un ejemplo. Pegá tu aviso y subí tus fotos para reemplazarlo.";
+
+/* ---------- lectura del texto ---------- */
+function num(re, txt){const m=txt.match(re); return m?m[1].replace(/\s/g,""):"";}
+function parseText(txt){
+  const t=txt.replace(/ /g," ");
+  const r={};
+  r.f_dorm=num(/(\d+)\s*(?:dormitorios?|dorm\.?|habitaciones?|cuartos?|bedrooms?)/i,t);
+  r.f_bath=num(/(\d+)\s*(?:baños?|bathrooms?)/i,t);
+  r.f_amb=num(/(\d+)\s*(?:ambientes?|amb\.?)/i,t);
+  r.f_car=num(/(\d+)\s*(?:cocheras?|garages?|estacionamientos?)/i,t);
+  r.f_m2=num(/(\d[\d.,]*)\s*m(?:²|2|ts2?)\s*(?:cub|cubiertos?|construidos?)/i,t) || num(/(?:cubiert[oa]s?|construid[oa]s?)\D{0,12}(\d[\d.,]*)\s*m/i,t);
+  r.f_lot=num(/(\d[\d.,]*)\s*m(?:²|2|ts2?)\s*(?:de\s*)?(?:terreno|lote|tot|totales?)/i,t) || num(/(?:terreno|lote|totales?)\D{0,12}(\d[\d.,]*)\s*m/i,t);
+  const p=t.match(/(USD|U\$S|US\$|u\$d|\$)\s?([\d.,]{4,})/i);
+  if(p) r.f_price=(/\$/.test(p[1])&&!/u/i.test(p[1])?"$ ":"USD ")+p[2];
+  if(/alquiler\s+temporario/i.test(t)) r.f_op="temporario"; else if(/alquiler|alquila/i.test(t)) r.f_op="alquiler"; else if(/venta|vende/i.test(t)) r.f_op="venta";
+  let n=0; Object.entries(r).forEach(([k,v])=>{ if(v){ $(k).value=v; n++; } });
+  return n;
+}
+$("btnParse").onclick=()=>{
+  const txt=$("raw").value.trim();
+  if(!txt){$("parseStatus").textContent="Pegá primero el texto del aviso.";return;}
+  clearSample();
+  const n=parseText(txt);
+  $("parseStatus").textContent = n? `Encontré ${n} datos. Revisá la ficha y completá titular, barrio y puntos fuertes.` : "No encontré datos con números. Completá la ficha a mano.";
+  schedule();
+};
+let sampleCleared=false;
+function clearSample(){
+  if(sampleCleared) return; sampleCleared=true;
+  ["f_title","f_type","f_loc","f_price","f_m2","f_lot","f_amb","f_dorm","f_bath","f_car","f_hl"].forEach(k=>{ if($(k).value===SAMPLE[k]) $(k).value=""; });
+  ["f_brand","f_handle"].forEach(k=>{ if($(k).value===SAMPLE[k]) $(k).value=""; });
+}
+
+/* ---------- leer link ---------- */
+let linkMissing=[];
+$("btnLink").onclick=async()=>{
+  const url=$("src").value.trim();
+  if(!/^https?:\/\//i.test(url)){$("linkStatus").textContent="Pegá un link que empiece con https://";return;}
+  $("btnLink").disabled=true; $("linkStatus").className="status"; $("linkStatus").textContent="Leyendo el aviso…";
+  try{
+    const r=await fetch("/api/extract?url="+encodeURIComponent(url)); const d=await r.json();
+    if(d.error){$("linkStatus").textContent=d.error; return;}
+    clearSample(); sampleCleared=true;
+    const map={f_title:d.title,f_loc:d.location,f_price:d.price,f_m2:d.m2,f_lot:d.lot,f_amb:d.rooms,f_dorm:d.bedrooms,f_bath:d.bathrooms,f_car:d.parking};
+    Object.entries(map).forEach(([k,v])=>{$(k).value=v||"";});
+    if(d.op) $("f_op").value=d.op;
+    if(d.description) $("raw").value=d.description;
+    let got=0;
+    if(d.images&&d.images.length){
+      $("linkStatus").textContent=`Bajando ${d.images.length} fotos…`;
+      S.photos=[];
+      for(const u of d.images){ try{ S.photos.push(await loadUrl("/api/img?url="+encodeURIComponent(u))); got++; }catch(e){} }
+      renderThumbs();
+    }
+    linkMissing=(d.missing||[]).filter(x=>x!=="Fotos"||!got);
+    $("linkStatus").className="status ok";
+    $("linkStatus").textContent=`Listo: ${got} fotos y ${9-(d.missing||[]).filter(x=>x!=="Fotos").length} de 9 datos.`+(linkMissing.length?` No encontré: ${linkMissing.join(", ")}. Completalo en la ficha.`:"")+" Escribí los puntos fuertes y revisá todo.";
+    schedule();
+  }catch(e){ $("linkStatus").textContent="No pude leer el link. Pegá el texto y subí las fotos a mano."; }
+  finally{ $("btnLink").disabled=false; }
+};
+function loadUrl(src){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res({img:im,url:src});im.onerror=rej;im.src=src;});}
+
+/* ---------- fotos ---------- */
+const drop=$("drop"), photoInput=$("photoInput");
+drop.onclick=()=>photoInput.click();
+drop.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();photoInput.click();} };
+drop.ondragover=e=>{e.preventDefault();drop.classList.add("over");};
+drop.ondragleave=()=>drop.classList.remove("over");
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over");addPhotos(e.dataTransfer.files);};
+photoInput.onchange=()=>{addPhotos(photoInput.files); photoInput.value="";};
+function loadImg(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const im=new Image();im.onload=()=>res({img:im,url});im.onerror=rej;im.src=url;});}
+async function addPhotos(files){
+  for(const f of [...files]){ if(!f.type.startsWith("image/")) continue; try{ S.photos.push(await loadImg(f)); }catch(e){} }
+  renderThumbs(); schedule();
+}
+function renderThumbs(){
+  const box=$("thumbs"); box.innerHTML="";
+  S.photos.forEach((p,i)=>{
+    const d=document.createElement("div"); d.className="thumb"+(i===0?" cover":"");
+    d.innerHTML=`<img src="${p.url}" alt="Foto ${i+1}">${i===0?'<span class="tag">Portada</span>':""}<button class="x" aria-label="Quitar foto ${i+1}">×</button><div class="mv"><button aria-label="Mover antes">‹</button><button aria-label="Mover después">›</button></div>`;
+    d.querySelector(".x").onclick=()=>{S.photos.splice(i,1);renderThumbs();schedule();};
+    const [l,r]=d.querySelectorAll(".mv button");
+    l.onclick=()=>{ if(i>0){[S.photos[i-1],S.photos[i]]=[S.photos[i],S.photos[i-1]];renderThumbs();schedule();} };
+    r.onclick=()=>{ if(i<S.photos.length-1){[S.photos[i+1],S.photos[i]]=[S.photos[i],S.photos[i+1]];renderThumbs();schedule();} };
+    box.appendChild(d);
+  });
+}
+$("logoInput").onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ S.logo=(await loadImg(f)).img; $("logoClear").hidden=false; schedule(); }catch(err){} };
+$("logoClear").onclick=()=>{S.logo=null;$("logoInput").value="";$("logoClear").hidden=true;schedule();};
+
+/* ---------- datos ---------- */
+function data(){
+  const v=k=>$(k).value.trim();
+  return {src:v("src"),title:v("f_title"),op:$("f_op").value,type:v("f_type"),loc:v("f_loc"),price:v("f_price"),m2:v("f_m2"),lot:v("f_lot"),amb:v("f_amb"),dorm:v("f_dorm"),bath:v("f_bath"),car:v("f_car"),
+    hl:v("f_hl").split("\n").map(s=>s.trim()).filter(Boolean).slice(0,4),lang:$("f_lang").value,accent:$("f_accent").value,brand:v("f_brand"),handle:v("f_handle"),cta:v("f_cta"),credit:v("f_credit")};
+}
+function facts(d,t){
+  return [[d.m2,t.m2],[d.lot,t.lot],[d.amb,t.amb],[d.dorm,t.dorm],[d.bath,t.bath],[d.car,t.car]].filter(f=>f[0]);
+}
+
+/* ---------- dibujo ---------- */
+function canvas(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;return c;}
+function coverFit(ctx,img,x,y,w,h){
+  if(!img){ctx.fillStyle="#CFC6BB";ctx.fillRect(x,y,w,h);ctx.fillStyle="#7A6E66";ctx.font="600 34px Manrope, sans-serif";ctx.textAlign="center";ctx.fillText("Subí tus fotos",x+w/2,y+h/2);ctx.textAlign="left";return;}
+  const s=Math.max(w/img.naturalWidth,h/img.naturalHeight), sw=w/s, sh=h/s;
+  ctx.drawImage(img,(img.naturalWidth-sw)/2,(img.naturalHeight-sh)/2,sw,sh,x,y,w,h);
+}
+function wrap(ctx,text,maxW){
+  const words=text.split(/\s+/), lines=[]; let line="";
+  for(const w of words){const t=line?line+" "+w:w; if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;} else line=t;}
+  if(line) lines.push(line); return lines;
+}
+function fitTitle(ctx,text,maxW,maxLines,start,min){
+  let size=start;
+  while(size>min){ctx.font=`800 ${size}px Montserrat, sans-serif`; const l=wrap(ctx,text,maxW); if(l.length<=maxLines) return {size,lines:l}; size-=4;}
+  ctx.font=`800 ${min}px Montserrat, sans-serif`; return {size:min,lines:wrap(ctx,text,maxW).slice(0,maxLines)};
+}
+function label(ctx,text,x,y,color,size=24,spacing=5){
+  ctx.font=`600 ${size}px Montserrat, sans-serif`; ctx.fillStyle=color;
+  if("letterSpacing" in ctx){ctx.letterSpacing=spacing+"px";ctx.fillText(text.toUpperCase(),x,y);ctx.letterSpacing="0px";}
+  else ctx.fillText(text.toUpperCase().split("").join(" "),x,y);
+}
+function drawLogo(ctx,x,y,maxW,maxH,align="right"){
+  if(!S.logo) return false;
+  const s=Math.min(maxW/S.logo.naturalWidth,maxH/S.logo.naturalHeight), w=S.logo.naturalWidth*s, h=S.logo.naturalHeight*s;
+  const lx = align==="right"? x-w : align==="center"? x-w/2 : x;
+  ctx.drawImage(S.logo,lx,y+(maxH-h)/2,w,h); return true;
+}
+function brandMark(ctx,st,x,y,align,color){
+  if(drawLogo(ctx,x,y,200,64,align)) return;
+  const d=data(); const name=d.brand||""; if(!name) return;
+  ctx.font="800 26px Montserrat, sans-serif"; ctx.fillStyle=color; ctx.textAlign=align; ctx.fillText(name,x,y+42); ctx.textAlign="left";
+}
+function opLabel(d,t){return [t[d.op],d.loc].filter(Boolean).join(" · ");}
+function photo(i){const p=S.photos[i];return p?p.img:null;}
+
+function render(){
+  const d=data(), t=T[d.lang], st={...STYLES[S.style],accent:d.accent};
+  const titleTxt=d.title||(d.type?d.type:(d.lang==="es"?"Tu propiedad":"Your property"));
+  const ctaTxt=d.cta||t.cta;
+  const fs=facts(d,t);
+  const feed=[], stories=[], reel=[];
+  const W=1080,H=1350,M=80;
+
+  // 1. Portada
+  {const c=canvas(W,H),x=c.getContext("2d"); const band=400;
+   coverFit(x,photo(0),0,0,W,H-band);
+   x.fillStyle=st.bg; x.fillRect(0,H-band,W,band);
+   x.fillStyle=st.accent; x.fillRect(M,H-band+64,64,6);
+   label(x,opLabel(d,t),M,H-band+120,st.muted,24,5);
+   const f=fitTitle(x,titleTxt,W-2*M,2,92,56); x.fillStyle=st.ink;
+   f.lines.forEach((l,i)=>x.fillText(l,M,H-band+120+f.size*1.05*(i+1)));
+   label(x,t.swipe,M,H-48,st.muted,20,3);
+   brandMark(x,st,W-M,H-100,"right",st.ink);
+   feed.push({c,name:"carrusel-01-portada"});}
+
+  // 2. Fotos con un punto fuerte cada una
+  const extra=Math.min(Math.max(S.photos.length-1,0),4) || (S.photos.length?0:2);
+  for(let i=0;i<extra;i++){
+    const c=canvas(W,H),x=c.getContext("2d"); const band=230; const hl=d.hl[i]||"";
+    x.fillStyle=st.bg; x.fillRect(0,0,W,H);
+    coverFit(x,photo(i+1),0,0,W,hl?H-band:H);
+    if(hl){ const f=fitTitle(x,hl,W-2*M,2,54,36); x.fillStyle=st.ink;
+      const y0=H-band+ (band-(f.lines.length*f.size*1.1))/2 + f.size*0.85;
+      f.lines.forEach((l,j)=>x.fillText(l,M,y0+j*f.size*1.1));
+      x.fillStyle=st.accent; x.fillRect(W-M-6,H-band+60,6,band-120);}
+    feed.push({c,name:`carrusel-0${feed.length+1}-foto`});
+  }
+
+  // 3. Datos clave (placa de texto)
+  {const c=canvas(W,H),x=c.getContext("2d");
+   x.fillStyle=st.alt; x.fillRect(0,0,W,H);
+   label(x,t.facts,M,M+40,st.accent==st.alt?st.altInk:st.accent,26,6);
+   const f=fitTitle(x,titleTxt,W-2*M,2,64,44); x.fillStyle=st.altInk;
+   f.lines.forEach((l,i)=>x.fillText(l,M,M+80+f.size*1.05*(i+1)));
+   const top=M+120+f.lines.length*f.size*1.05+40, colW=(W-2*M)/2, rowH=190;
+   x.strokeStyle=st.altInk; x.globalAlpha=.25; x.lineWidth=2; x.beginPath(); x.moveTo(M,top); x.lineTo(W-M,top); x.stroke(); x.globalAlpha=1;
+   fs.slice(0,6).forEach((fa,i)=>{const cx=M+(i%2)*colW, cy=top+40+Math.floor(i/2)*rowH;
+     x.fillStyle=st.altInk; x.font="800 96px Montserrat, sans-serif"; x.fillText(fa[0],cx,cy+90);
+     x.font="500 28px Montserrat, sans-serif"; x.globalAlpha=.7; x.fillText(fa[1],cx,cy+136); x.globalAlpha=1;});
+   if(!fs.length){x.font="500 32px Manrope, sans-serif";x.fillStyle=st.altInk;x.fillText("Completá m², ambientes y baños en la ficha.",M,top+90);}
+   x.fillStyle=st.altInk; x.font="800 44px Montserrat, sans-serif"; x.fillText(d.price||t.ask,M,H-M-10);
+   feed.push({c,name:`carrusel-0${feed.length+1}-datos`});}
+
+  // 4. Cierre con CTA
+  {const c=canvas(W,H),x=c.getContext("2d");
+   x.fillStyle=st.accent; x.fillRect(0,0,W,H);
+   const tone="#FFFFFF";
+   label(x,d.loc||"",M,M+40,tone,24,5);
+   const f=fitTitle(x,t.visit+".",W-2*M,3,120,72); x.fillStyle=tone;
+   const y0=H/2-(f.lines.length*f.size*1.05)/2+f.size*0.6;
+   f.lines.forEach((l,i)=>x.fillText(l,M,y0+i*f.size*1.05));
+   x.font="500 36px Manrope, sans-serif"; const cl=wrap(x,ctaTxt,W-2*M); cl.slice(0,3).forEach((l,i)=>x.fillText(l,M,y0+f.lines.length*f.size*1.05+40+i*50));
+   if(d.handle){x.font="800 40px Montserrat, sans-serif"; x.fillText(d.handle,M,H-M-60);}
+   if(d.credit){x.font="500 22px Manrope, sans-serif"; x.globalAlpha=.8; x.fillText(d.credit,M,H-M-10); x.globalAlpha=1;}
+   brandMark(x,st,W-M,H-M-110,"right",tone);
+   feed.push({c,name:`carrusel-0${feed.length+1}-contacto`});}
+
+  // Historias 1080x1920 (250 px libres arriba y abajo)
+  const SW=1080,SH=1920,SAFE=250;
+  {const c=canvas(SW,SH),x=c.getContext("2d");
+   coverFit(x,photo(0),0,0,SW,SH);
+   const bh=520, by=SH-SAFE-bh-40; x.fillStyle=st.bg; x.fillRect(M-20,by,SW-2*(M-20),bh);
+   label(x,opLabel(d,t),M+30,by+80,st.muted,24,5);
+   const f=fitTitle(x,titleTxt,SW-2*M-60,3,88,56); x.fillStyle=st.ink;
+   f.lines.forEach((l,i)=>x.fillText(l,M+30,by+90+f.size*1.05*(i+1)));
+   x.fillStyle=st.accent; x.fillRect(M+30,by+bh-70,64,6);
+   stories.push({c,name:"historia-01"});}
+  {const c=canvas(SW,SH),x=c.getContext("2d");
+   x.fillStyle=st.alt; x.fillRect(0,0,SW,SH);
+   coverFit(x,photo(1)||photo(0),0,0,SW,SH*0.5);
+   label(x,t.facts,M,SH*0.5+110,st.accent==st.alt?st.altInk:st.accent,26,6);
+   fs.slice(0,6).forEach((fa,i)=>{const cx=M+(i%2)*((SW-2*M)/2), cy=SH*0.5+150+Math.floor(i/2)*160;
+     x.fillStyle=st.altInk; x.font="800 80px Montserrat, sans-serif"; x.fillText(fa[0],cx,cy+80);
+     x.font="500 26px Montserrat, sans-serif"; x.globalAlpha=.7; x.fillText(fa[1],cx,cy+120); x.globalAlpha=1;});
+   x.fillStyle=st.altInk; x.font="800 44px Montserrat, sans-serif"; x.fillText(d.price||t.ask,M,SH-SAFE-30);
+   stories.push({c,name:"historia-02"});}
+  {const c=canvas(SW,SH),x=c.getContext("2d");
+   x.fillStyle=st.accent; x.fillRect(0,0,SW,SH);
+   coverFit(x,photo(2)||photo(0),M,SAFE+40,SW-2*M,(SW-2*M)*1.0);
+   const tone="#FFFFFF"; const y=SAFE+40+(SW-2*M)+120;
+   const f=fitTitle(x,t.visit+".",SW-2*M,2,96,64); x.fillStyle=tone;
+   f.lines.forEach((l,i)=>x.fillText(l,M,y+i*f.size*1.05));
+   x.font="500 34px Manrope, sans-serif"; wrap(x,ctaTxt,SW-2*M).slice(0,2).forEach((l,i)=>x.fillText(l,M,y+f.lines.length*f.size*1.05+30+i*46));
+   if(d.handle){x.font="800 40px Montserrat, sans-serif"; x.fillText(d.handle,M,SH-SAFE-20);}
+   brandMark(x,st,SW-M,SH-SAFE-70,"right",tone);
+   stories.push({c,name:"historia-03"});}
+
+  // Portada de reel: título dentro del cuadrado central (lo que se ve en la grilla)
+  {const c=canvas(SW,SH),x=c.getContext("2d");
+   coverFit(x,photo(0),0,0,SW,SH);
+   const sq=(SH-SW)/2; const bh=300, by=sq+SW/2-bh/2+160;
+   x.fillStyle=st.bg; x.globalAlpha=.92; x.fillRect(0,by,SW,bh); x.globalAlpha=1;
+   x.textAlign="center"; label(x,"",0,0,st.muted);
+   x.font="600 24px Montserrat, sans-serif"; x.fillStyle=st.muted;
+   if("letterSpacing" in x) x.letterSpacing="5px"; x.fillText(opLabel(d,t).toUpperCase(),SW/2,by+70); if("letterSpacing" in x) x.letterSpacing="0px";
+   const f=fitTitle(x,titleTxt,SW-2*M,2,76,48); x.fillStyle=st.ink;
+   const y0=by+70+(bh-70-f.lines.length*f.size*1.05)/2+f.size*0.85;
+   f.lines.forEach((l,i)=>x.fillText(l,SW/2,y0+i*f.size*1.05)); x.textAlign="left";
+   reel.push({c,name:"portada-reel"});}
+
+  out.feed=feed; out.stories=stories; out.reel=reel;
+  show("tab-feed",feed); show("tab-stories",stories); show("tab-reel",reel);
+  captions(d); missing(d);
+}
+
+function show(id,list){
+  const box=$(id); box.innerHTML="";
+  list.forEach((it,i)=>{
+    const fig=document.createElement("figure");
+    const img=new Image(); img.src=it.c.toDataURL("image/jpeg",0.82); img.alt=it.name.replace(/-/g," ");
+    fig.appendChild(img);
+    const cap=document.createElement("figcaption"); cap.innerHTML=`<span>${String(i+1).padStart(2,"0")} · ${it.c.width}×${it.c.height}</span>`;
+    const b=document.createElement("button"); b.textContent="PNG"; b.onclick=()=>savePNG(it);
+    cap.appendChild(b); fig.appendChild(cap); box.appendChild(fig);
+  });
+}
+
+/* ---------- textos ---------- */
+function slug(s){return (s||"propiedad").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"propiedad";}
+function tag(s){return s?"#"+s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9]/g,""):"";}
+function captions(d){
+  const es=T.es,en=T.en;
+  const fe=facts(d,es), fn=facts(d,en);
+  const place=d.loc?` en ${d.loc}`:"";
+  const head=(d.title||d.type||"Propiedad")+place;
+  const tags=[...new Set([d.loc&&d.loc.split(/[·,]/).map(s=>tag(s.trim())), tag(d.type), d.op==="venta"?"#EnVenta":"#EnAlquiler", d.type?tag(d.type+(d.op==="venta"?"EnVenta":"EnAlquiler")):"", "#RealEstateArgentina","#Propiedades","#Inmobiliaria"].flat().filter(Boolean))].slice(0,10).join(" ");
+  let s=`${head} 🏡\n\n`;
+  d.hl.forEach(h=>s+=`• ${h}\n`);
+  if(fe.length) s+=`• ${fe.map(f=>f[0]+" "+f[1]).join(" · ")}\n`;
+  s+=`\n${d.price?es.price+": "+d.price:es.ask}.\n${d.cta||es.cta} 📩\n`;
+  if(d.handle) s+=`\n${d.handle}`;
+  if(d.credit) s+=`\n${d.credit}`;
+  s+=`\n\n${tags}`;
+  $("capES").textContent=s;
+  let e=`${(d.title||d.type||"Property")}${d.loc?" in "+d.loc:""}.\n`;
+  if(fn.length) e+=fn.map(f=>f[0]+" "+f[1]).join(" · ")+"\n";
+  e+=`${d.price?"Price: "+d.price:en.ask}. ${en.cta}.`;
+  if(d.handle) e+=`\n${d.handle}`;
+  e+=`\n\n[Los puntos fuertes quedan en español: traducilos si el post va en inglés.]`;
+  $("capEN").textContent=e;
+  $("altTxt").textContent=S.photos.length? S.photos.map((p,i)=>`Foto ${i+1}: ${i===0?"portada de ":""}${(d.type||"propiedad").toLowerCase()}${d.loc?" en "+d.loc:""}. [describí qué se ve]`).join("\n") : "Subí fotos para armar el texto alternativo.";
+}
+function missing(d){
+  const m=[]; if(!d.title) m.push("Titular"); if(!d.loc) m.push("Barrio y ciudad"); if(!d.price) m.push("Precio (va “a consultar”)");
+  if(!d.m2&&!d.lot) m.push("Superficie"); if(!d.dorm&&!d.amb) m.push("Ambientes o dormitorios"); if(!d.bath) m.push("Baños");
+  if(!d.hl.length) m.push("Puntos fuertes"); if(!S.photos.length) m.push("Fotos"); if(!d.handle) m.push("Contacto (@ o WhatsApp)");
+  const box=$("missing"); box.hidden=!m.length;
+  box.innerHTML=m.length?`<b>[a completar]</b> Lo que falta no aparece en el diseño:<ul>${m.map(x=>`<li>${x}</li>`).join("")}</ul>`:"";
+}
+
+/* ---------- descargas ---------- */
+const blobOf=c=>new Promise(r=>c.toBlob(r,"image/png"));
+function msg(t,ok){const s=$("saveStatus"); s.textContent=t; s.className="status"+(ok?" ok":"");}
+async function save(filename,blob){
+  const u=URL.createObjectURL(blob), a=document.createElement("a"); a.href=u; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); msg("Descargando "+filename,true);
+}
+async function savePNG(it){ const d=data(); await save(`${slug(d.title||d.loc)}-${it.name}.png`, await blobOf(it.c)); }
+$("btnZip").onclick=async()=>{
+  const d=data(), base=slug(d.title||d.loc); const zip=new JSZip();
+  for(const it of [...out.feed,...out.stories,...out.reel]) zip.file(`${it.name}.png`, await blobOf(it.c));
+  zip.file("textos.md",`# ${d.title||"Propiedad"}\n\nFuente: ${d.src||"[a completar]"}\n\n## Caption ES\n\n${$("capES").textContent}\n\n## Caption EN\n\n${$("capEN").textContent}\n\n## Texto alternativo\n\n${$("altTxt").textContent}\n`);
+  await save(`${base}-redes.zip`, await zip.generateAsync({type:"blob"}));
+};
+
+/* ---------- pestañas y copiar ---------- */
+document.querySelectorAll("[role=tab]").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("[role=tab]").forEach(o=>o.setAttribute("aria-selected",o===b));
+  ["feed","stories","reel","copy","check"].forEach(k=>$("tab-"+k).hidden=k!==b.dataset.tab);
+});
+document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>{
+  const el=$(b.dataset.copy), txt=el.textContent;
+  navigator.clipboard.writeText(txt).then(()=>msg("Copiado.",true)).catch(()=>{const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);msg("Seleccionado: copialo con Ctrl+C o mantené apretado.");});
+});
+
+/* ---------- render ---------- */
+let timer=null;
+function schedule(){clearTimeout(timer);timer=setTimeout(render,250);}
+document.querySelectorAll("input[type=text],input[type=url],textarea,select,input[type=color]").forEach(el=>el.addEventListener("input",()=>{ if(el.id!=="raw"&&el.id!=="src") schedule(); }));
+Promise.all([document.fonts.load('800 80px Montserrat'),document.fonts.load('600 24px Montserrat'),document.fonts.load('500 28px Montserrat'),document.fonts.load('500 34px Manrope')]).catch(()=>{}).finally(render);
+})();
+</script>
+
+</body>
+</html>
