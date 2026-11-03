@@ -31,13 +31,47 @@ function text(html) {
 }
 const num = (re, t) => { const m = t.match(re); return m ? m[1].replace(/\s/g, "") : ""; };
 
+// Fotos en la mejor calidad: de cada foto se queda con la versión más grande que encuentre.
+const SMALL = /(thumb|thumbnail|small|mini|_s\.|_t\.|_xs|_sm|-\d{2,3}x\d{2,3}\.|\/w_\d{2,3}|resize=\d{2,3}|[?&](w|width)=\d{2,3}\b)/i;
+function score(u, w) { return (w || 0) + (SMALL.test(u) ? 0 : 5000) + u.length / 1000; }
+function baseKey(u) {
+  try { const x = new URL(u); return (x.hostname + x.pathname).toLowerCase().replace(/(_|-)(thumb|thumbnail|small|mini|medium|large|big|xs|sm|md|lg|xl|\d{2,4}x\d{2,4}|\d{2,4}w)(?=\.)/g, "").replace(/\/(thumbs?|small|medium|large|resized|w_\d+|h_\d+)\//g, "/"); } catch (e) { return u; }
+}
 function images(html, base, ld) {
-  const set = new Set();
-  const add = u => { if (!u) return; try { const abs = new URL(decode(u), base).href; if (/\.(jpe?g|png|webp)(\?|$)/i.test(abs) || /image|img|foto|photo|media|cdn/i.test(abs)) set.add(abs); } catch (e) {} };
-  add(meta(html, "og:image"));
-  ld.forEach(o => { const im = o.image || o.photo; (Array.isArray(im) ? im : [im]).forEach(x => add(typeof x === "string" ? x : x && (x.url || x.contentUrl))); });
-  for (const m of html.matchAll(/(?:src|data-src|data-lazy|href)=["']([^"']+\.(?:jpe?g|webp|png)(?:\?[^"']*)?)["']/gi)) add(m[1]);
-  return [...set].filter(u => !/logo|icon|avatar|sprite|placeholder|banner|whatsapp|facebook|google/i.test(u)).slice(0, 12);
+  const best = new Map();
+  const add = (u, w) => {
+    if (!u) return;
+    try {
+      const abs = new URL(decode(u).trim(), base).href;
+      if (!/\.(jpe?g|png|webp|avif)(\?|$)/i.test(abs) && !/image|img|foto|photo|media|cdn|picture/i.test(abs)) return;
+      if (/logo|icon|avatar|sprite|placeholder|banner|whatsapp|facebook|google|\.svg/i.test(abs)) return;
+      const k = baseKey(abs), cur = best.get(k);
+      if (!cur || score(abs, w) > score(cur.u, cur.w)) best.set(k, { u: abs, w: w || 0, order: cur ? cur.order : best.size });
+    } catch (e) {}
+  };
+  add(meta(html, "og:image"), 1200);
+  ld.forEach(o => { const im = o.image || o.photo; (Array.isArray(im) ? im : [im]).forEach(x => add(typeof x === "string" ? x : x && (x.url || x.contentUrl), 1200)); });
+  for (const m of html.matchAll(/(?:data-)?srcset=["']([^"']+)["']/gi))
+    m[1].split(",").forEach(part => { const [u, d] = part.trim().split(/\s+/); add(u, parseInt(d) || 0); });
+  for (const m of html.matchAll(/(?:src|data-src|data-lazy|data-original|data-full|data-zoom-image|data-large|href)=["']([^"']+\.(?:jpe?g|webp|png|avif)(?:\?[^"']*)?)["']/gi)) add(m[1], /data-(full|zoom|large|original)/i.test(m[0]) ? 3000 : 0);
+  return [...best.values()].sort((a, b) => a.order - b.order).map(v => v.u).slice(0, 12);
+}
+// Si la foto es una miniatura, prueba la versión grande quitando el tamaño del nombre o de la dirección.
+async function upgrade(u) {
+  if (!SMALL.test(u)) return u;
+  const tries = [
+    u.replace(/(_|-)(thumb|thumbnail|small|mini|xs|sm)(?=\.)/i, ""),
+    u.replace(/\/(thumbs?|small)\//i, "/"),
+    u.replace(/-\d{2,3}x\d{2,3}(?=\.)/, ""),
+    u.replace(/([?&])(w|width|h|height|resize)=\d+&?/gi, "$1").replace(/[?&]$/, "")
+  ].filter(x => x !== u);
+  for (const t of tries) {
+    try {
+      const r = await fetch(t, { method: "HEAD", headers: { "User-Agent": UA }, signal: AbortSignal.timeout(2500) });
+      if (r.ok && (r.headers.get("content-type") || "").startsWith("image/")) return t;
+    } catch (e) {}
+  }
+  return u;
 }
 
 const { session } = require("../lib/auth");
@@ -84,7 +118,7 @@ module.exports = async (req, res) => {
     bathrooms: num(/(\d+)\s*baños?/i, t),
     parking: num(/(\d+)\s*(?:cocheras?|garages?)/i, t),
     op: /alquiler\s+temporario/i.test(t) ? "temporario" : /\balquiler\b/i.test(title + " " + description) ? "alquiler" : "venta",
-    images: images(html, url, ld),
+    images: await Promise.all(images(html, url, ld).map(upgrade)),
     source: url
   };
   const labels = { title: "Titular", location: "Barrio y ciudad", price: "Precio", m2: "m² cubiertos", lot: "m² terreno", rooms: "Ambientes", bedrooms: "Dormitorios", bathrooms: "Baños", parking: "Cocheras" };

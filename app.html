@@ -76,6 +76,8 @@ figcaption button{padding:4px 9px;font-size:12px}
 .check li{margin-bottom:4px}
 .saveall{margin-top:24px;border:1px solid var(--line);padding:24px;display:flex;flex-direction:column;gap:10px;align-items:stretch}
 .saveall button{padding:16px;font-size:16px}
+.reelbox{border:1px solid var(--line);padding:20px}
+.reelbox canvas,.reelbox video{display:block;width:100%;max-width:300px;aspect-ratio:9/16;margin-top:12px;background:#000;border:1px solid var(--line)}
 .foot{margin-top:28px;font-size:12px;color:var(--muted)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -170,13 +172,24 @@ figcaption button{padding:4px 9px;font-size:12px}
         <div class="tabs" role="tablist" style="margin-top:14px">
           <button role="tab" data-tab="feed" aria-selected="true">Carrusel 4:5</button>
           <button role="tab" data-tab="stories" aria-selected="false">Historias</button>
-          <button role="tab" data-tab="reel" aria-selected="false">Portada reel</button>
+          <button role="tab" data-tab="reel" aria-selected="false">Reel</button>
           <button role="tab" data-tab="copy" aria-selected="false">Textos</button>
           <button role="tab" data-tab="check" aria-selected="false">Antes de publicar</button>
         </div>
         <div id="tab-feed" class="out feed"></div>
         <div id="tab-stories" class="out tall" hidden></div>
-        <div id="tab-reel" class="out tall" hidden></div>
+        <div id="tab-reel" hidden>
+          <div class="reelbox">
+            <h2 style="margin:0 0 6px">Video del reel</h2>
+            <p class="hint" style="margin:0 0 12px">Arma un video vertical de unos 20 segundos con tus fotos, el texto y animaciones, en el estilo elegido. Se graba en tiempo real: dejá la pantalla abierta mientras tanto.</p>
+            <div class="row"><button id="btnReel" class="primary">Generar video</button><button id="btnReelSave" hidden>Guardar video</button></div>
+            <div id="reelStatus" class="status" role="status" style="margin-top:8px"></div>
+            <canvas id="reelCanvas" hidden></canvas>
+            <video id="reelVideo" controls playsinline loop hidden></video>
+          </div>
+          <h2 style="margin:24px 0 12px">Portada del reel</h2>
+          <div id="reelCovers" class="out tall"></div>
+        </div>
         <div id="tab-copy" hidden>
           <div class="stack">
             <div class="row" style="justify-content:space-between"><h2 style="margin:0">Caption en español</h2><button data-copy="capES">Copiar</button></div>
@@ -574,7 +587,7 @@ function render(){
   stories.push({c:piece(st,SW,SH,"cta",base,{img:photo(2)||photo(0),img2:photo(0)}),name:"historia-03"});
   reel.push({c:piece(st,SW,SH,"cover",base,{img:photo(0),img2:photo(1)}),name:"portada-reel"});
   out.feed=feed; out.stories=stories; out.reel=reel;
-  show("tab-feed",feed); show("tab-stories",stories); show("tab-reel",reel);
+  show("tab-feed",feed); show("tab-stories",stories); show("reelCovers",reel);
   captions(d); missing(d); previews(base);
 }
 
@@ -642,7 +655,7 @@ function missing(d){
 }
 
 /* ---------- descargas: galería en el celu, JPG en la compu ---------- */
-const jpgOf=c=>new Promise(r=>c.toBlob(r,"image/jpeg",0.92));
+const jpgOf=c=>new Promise(r=>c.toBlob(r,"image/jpeg",0.95));
 function msg(t,ok){const s=$("saveStatus"); s.textContent=t; s.className="status"+(ok?" ok":"");}
 const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));
 async function saveFiles(items){
@@ -658,6 +671,114 @@ async function saveFiles(items){
 async function savePNG(it){ await saveFiles([it]); }
 $("btnZip").onclick=()=>saveFiles([...out.feed,...out.stories,...out.reel]);
 $("btnZip").textContent = mobile? "Guardar todo en la galería" : "Descargar todo (JPG)";
+
+/* ---------- reel animado (video 9:16 con las fotos y el texto) ---------- */
+const REEL_THEME = {
+  oscuro:{title:F.mont(800), small:F.mont(600), ink:"#F2EADF", accent:"#BFAF9F", panel:"#2B1E17", upper:false},
+  cielo:{title:F.corm(500), small:F.jost(500), ink:"#FFFFFF", accent:"#E8C47A", tint:"rgba(20,44,110,", upper:true},
+  sold:{title:F.bod(400), small:F.jost(500), ink:"#FFFFFF", accent:"#FFFFFF", upper:false},
+  vidrio:{title:F.jost(300), bold:F.jost(600), small:F.jost(500), ink:"#FFFFFF", accent:"#BDE6F0", upper:false},
+  ventana:{title:F.corm(500,"italic"), small:F.corm(500), ink:"#FFFFFF", accent:"#FFFFFF", upper:false},
+  arco:{title:F.bod(500), small:F.jost(500), ink:"#1F2A44", accent:"#1F2A44", card:"#F7F3EC", upper:true}
+};
+const ease=t=>1-Math.pow(1-Math.min(Math.max(t,0),1),3);
+function kenBurns(x,img,W,H,p,dir){
+  const z=1.04+0.10*p, dx=(dir%2?1:-1)*W*0.03*p, dy=(dir%3===0?-1:1)*H*0.015*p;
+  x.save(); x.translate(W/2+dx,H/2+dy); x.scale(z,z); x.translate(-W/2,-H/2); coverFit(x,img,0,0,W,H); x.restore();
+}
+function reelText(x,th,W,H,local,dur,eyebrow,title,sub,style,c){
+  const M=W*0.08, inT=ease((local-0.15)/0.6), out=1-ease((local-(dur-0.45))/0.4);
+  const a=Math.min(inT,out); if(a<=0) return;
+  const tt=th.upper?title.toUpperCase():title;
+  x.font=th.title(10); const f=fit(x,tt,W-2*M,3,W*0.095,W*0.055,th.title);
+  const blockH=f.lines.length*f.size*1.08+W*0.16;
+  const y0=H*0.68-blockH/2;
+  // fondo para que se lea el texto
+  if(style==="arco"){ x.globalAlpha=a; x.fillStyle=th.card; x.fillRect(M*0.6,y0-W*0.06,W-1.2*M,blockH+W*0.1); x.globalAlpha=1; }
+  else if(style==="oscuro"){ x.globalAlpha=a*0.92; x.fillStyle=th.panel; x.fillRect(0,y0-W*0.07,W,blockH+W*0.12); x.globalAlpha=1; }
+  else { const g=x.createLinearGradient(0,H*0.35,0,H); g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,(th.tint||"rgba(0,0,0,")+(0.75*a)+")"); x.fillStyle=g; x.fillRect(0,H*0.35,W,H*0.65); }
+  const center=style!=="oscuro", ax=center?W/2:M, al=center?"center":"left";
+  x.globalAlpha=a; x.fillStyle=th.accent||c.accent; x.font=th.small(W*0.028);
+  spaced(x,eyebrow.toUpperCase(),ax,y0+(1-inT)*30,5,al);
+  x.fillStyle=th.ink;
+  f.lines.forEach((l,i)=>{ const li=ease((local-0.3-i*0.12)/0.6); x.globalAlpha=Math.min(li,out); x.font=th.title(f.size); x.textAlign=al; x.fillText(l,ax,y0+W*0.1+i*f.size*1.08+f.size*0.8+(1-li)*40); });
+  x.textAlign="left";
+  if(sub){ const si=ease((local-0.7)/0.6); x.globalAlpha=Math.min(si,out); x.font=th.small(W*0.034); x.fillStyle=th.ink; x.textAlign=al;
+    wrap(x,sub,W-2*M).slice(0,2).forEach((l,i)=>x.fillText(l,ax,y0+W*0.12+f.lines.length*f.size*1.08+W*0.03+i*W*0.048)); x.textAlign="left"; }
+  x.globalAlpha=1;
+}
+function buildReel(){
+  const d=data(), t=T[d.lang], c=content(d,t), style=S.style, th=REEL_THEME[style], W=1080, H=1920;
+  const n=S.photos.length, scenes=[];
+  scenes.push({dur:3.2,draw:(x,l,du)=>{kenBurns(x,photo(0),W,H,l/du,0); reelText(x,th,W,H,l,du,c.eyebrow,c.title,c.price,style,c);
+    if(l<du-0.4) drawLogo(x,W/2,H*0.08,W*0.4,W*0.09,"center");}});
+  for(let i=1;i<Math.min(n,7);i++){
+    const txt=c.photoText[i-1]||c.title;
+    scenes.push({dur:2.6,draw:(x,l,du)=>{kenBurns(x,photo(i),W,H,l/du,i); reelText(x,th,W,H,l,du,c.loc||c.eyebrow,txt,"",style,c);}});
+  }
+  const bg=blurred(photo(n>1?1:0),W,H,24);
+  scenes.push({dur:3.4,draw:(x,l,du)=>{
+    x.drawImage(bg,0,0); x.fillStyle="rgba(0,0,0,0.45)"; x.fillRect(0,0,W,H);
+    const M=W*0.1, out=1-ease((l-(du-0.45))/0.4);
+    x.globalAlpha=ease(l/0.5)*out; x.fillStyle=th.accent||"#FFF"; x.font=th.small(W*0.03); spaced(x,c.factsLabel.toUpperCase(),W/2,H*0.25,6,"center");
+    c.facts.slice(0,6).forEach((fa,i)=>{
+      const p=ease((l-0.3-i*0.2)/0.6); if(p<=0) return;
+      const num=/^\d+$/.test(fa[0])?String(Math.round(+fa[0]*p)):fa[0];
+      const cx=W/2+(i%2?W*0.2:-W*0.2), cy=H*0.36+Math.floor(i/2)*H*0.16;
+      x.globalAlpha=p*out; x.fillStyle="#FFF"; x.textAlign="center";
+      x.font=(style==="oscuro"?F.mont(800):style==="vidrio"?F.jost(300):th.title)(W*0.12); x.fillText(num,cx,cy+(1-p)*40);
+      x.font=th.small(W*0.03); x.fillText(fa[1],cx,cy+W*0.07); x.textAlign="left";
+    });
+    x.globalAlpha=ease((l-1.2)/0.6)*out; x.font=th.small(W*0.042); x.fillStyle="#FFF"; x.textAlign="center"; x.fillText(c.price,W/2,H*0.86); x.textAlign="left"; x.globalAlpha=1;
+  }});
+  scenes.push({dur:3.4,draw:(x,l,du)=>{kenBurns(x,photo(n>2?2:0),W,H,l/du,5); reelText(x,th,W,H,l,du+5,c.handle||c.brand||c.eyebrow,c.visit+".",c.cta,style,c);
+    x.globalAlpha=ease((l-0.8)/0.6); drawLogo(x,W/2,H*0.08,W*0.4,W*0.09,"center"); x.globalAlpha=1;}});
+  let acc=0; scenes.forEach(s=>{s.start=acc; acc+=s.dur;});
+  return {W,H,scenes,total:acc};
+}
+function drawReelFrame(x,reel,time){
+  const {scenes,W,H}=reel, X=0.45;
+  let i=scenes.findIndex(s=>time<s.start+s.dur); if(i<0) i=scenes.length-1;
+  const s=scenes[i], l=time-s.start;
+  x.fillStyle="#000"; x.fillRect(0,0,W,H);
+  s.draw(x,l,s.dur);
+  if(i>0&&l<X){ const p=scenes[i-1]; x.globalAlpha=1-l/X; p.draw(x,p.dur-0.001,p.dur); x.globalAlpha=1; }
+}
+function pickMime(){
+  if(typeof MediaRecorder==="undefined") return null;
+  for(const m of ["video/mp4;codecs=avc1.42E01E","video/mp4;codecs=avc1","video/mp4","video/webm;codecs=vp9","video/webm"]) if(MediaRecorder.isTypeSupported(m)) return m;
+  return null;
+}
+let reelBlob=null;
+async function makeReel(){
+  const mime=pickMime(), st=$("reelStatus"), btn=$("btnReel");
+  if(!mime){ st.textContent="Este navegador no puede grabar video. Probá con Chrome o Safari actualizados."; return; }
+  if(!S.photos.length){ st.textContent="Subí o traé fotos primero."; return; }
+  btn.disabled=true; $("btnReelSave").hidden=true; $("reelVideo").hidden=true; reelBlob=null;
+  const reel=buildReel(), cv=$("reelCanvas"); cv.hidden=false; cv.width=reel.W; cv.height=reel.H;
+  const x=cv.getContext("2d"); x.imageSmoothingQuality="high";
+  drawReelFrame(x,reel,0);
+  const stream=cv.captureStream(30), rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:10_000_000}), chunks=[];
+  rec.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+  const done=new Promise(r=>rec.onstop=r);
+  rec.start(250);
+  const t0=performance.now();
+  await new Promise(res=>{ (function loop(){ const tm=(performance.now()-t0)/1000;
+    if(tm>=reel.total){ drawReelFrame(x,reel,reel.total-0.01); return res(); }
+    drawReelFrame(x,reel,tm); st.textContent=`Grabando el reel… ${Math.round(tm/reel.total*100)}% (dejá la pantalla abierta)`; requestAnimationFrame(loop); })(); });
+  rec.stop(); await done; stream.getTracks().forEach(t=>t.stop());
+  reelBlob=new Blob(chunks,{type:mime.split(";")[0]});
+  const v=$("reelVideo"); v.src=URL.createObjectURL(reelBlob); v.hidden=false; cv.hidden=true;
+  $("btnReelSave").hidden=false; btn.disabled=false;
+  st.className="status ok"; st.textContent=`Listo: ${Math.round(reel.total)} segundos.`+(mime.includes("webm")?" Quedó en formato WebM: si Instagram no lo acepta, generalo desde el celu (Safari) para tener MP4.":" Sumale música desde Instagram al publicarlo.");
+}
+$("btnReel").onclick=()=>makeReel().catch(()=>{ $("btnReel").disabled=false; $("reelStatus").textContent="No se pudo grabar el video. Probá de nuevo."; });
+$("btnReelSave").onclick=async()=>{
+  if(!reelBlob) return; const d=data(), ext=reelBlob.type.includes("mp4")?"mp4":"webm";
+  const f=new File([reelBlob],`${slug(d.title||d.loc)}-reel.${ext}`,{type:reelBlob.type});
+  if(mobile&&navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f]}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+  const u=URL.createObjectURL(f), a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),8000);
+};
 
 /* ---------- pestañas y copiar ---------- */
 document.querySelectorAll("[role=tab]").forEach(b=>b.onclick=()=>{
