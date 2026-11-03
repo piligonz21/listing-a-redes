@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Códigos · Listing a Redes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Códigos de acceso</h1>
+  <p class="lead">Generá un link para cada persona que compra. Cada código entra en hasta 2 dispositivos y lo podés dar de baja cuando quieras.</p>
+
+  <form id="loginF" class="box">
+    <p class="eyebrow">Admin</p>
+    <div class="row"><div class="grow"><label for="pw">Contraseña de admin</label><input id="pw" type="password" autocomplete="current-password"></div><button class="primary">Entrar</button></div>
+    <div id="lmsg" class="msg" role="status"></div>
+  </form>
+
+  <div id="panel" hidden>
+    <form id="newF" class="box">
+      <p class="eyebrow">Nuevo link</p>
+      <div class="row"><div class="grow"><label for="label">Para quién es (nombre o inmobiliaria)</label><input id="label" placeholder="Ej: Inmobiliaria Norte"></div><button class="primary">Generar link</button></div>
+      <div id="out" class="newcode" hidden></div>
+    </form>
+    <div class="box" style="margin-top:16px">
+      <p class="eyebrow">Códigos</p>
+      <div class="tablewrap"><table><thead><tr><th>Para</th><th>Código</th><th>Creado</th><th>Dispositivos</th><th>Estado</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+      <div id="pmsg" class="msg" role="status"></div>
+    </div>
+  </div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let PW="";
+async function api(method,body){
+  const r=await fetch("/api/admin/codes",{method,headers:{"Content-Type":"application/json","x-admin-password":PW},body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||"Error"); return j;
+}
+const linkOf=c=>`${location.origin}/?code=${c}`;
+const esc=s=>String(s||"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+async function load(){
+  const {items}=await api("GET");
+  $("rows").innerHTML=items.map(it=>`<tr><td>${esc(it.label)||"—"}</td><td><code>${it.code}</code></td><td>${(it.created||"").slice(0,10)}</td><td>${(it.devices||[]).length} / 2</td>
+    <td><span class="tag ${it.active?"on":""}">${it.active?"Activo":"De baja"}</span></td>
+    <td><div class="row"><button data-copy="${it.code}">Copiar link</button><button data-toggle="${it.code}" data-active="${it.active}">${it.active?"Dar de baja":"Reactivar"}</button><button data-reset="${it.code}">Liberar dispositivos</button></div></td></tr>`).join("")||`<tr><td colspan="6">Todavía no generaste códigos.</td></tr>`;
+}
+function copy(t){ navigator.clipboard.writeText(t).then(()=>{$("pmsg").className="msg ok";$("pmsg").textContent="Link copiado.";}).catch(()=>{$("pmsg").textContent=t;}); }
+$("loginF").onsubmit=async e=>{e.preventDefault(); PW=$("pw").value;
+  try{ await load(); $("loginF").hidden=true; $("panel").hidden=false; }catch(err){ $("lmsg").className="msg bad"; $("lmsg").textContent=err.message; }};
+$("newF").onsubmit=async e=>{e.preventDefault();
+  try{ const c=await api("POST",{label:$("label").value}); const l=linkOf(c.code);
+    $("out").hidden=false; $("out").innerHTML=`<p class="eyebrow">Listo</p><p style="margin:0 0 10px">Código <code>${c.code}</code> para ${esc(c.label)||"—"}.</p><p style="margin:0 0 12px"><code>${l}</code></p><button type="button" class="primary" id="cp">Copiar link</button>`;
+    $("cp").onclick=()=>copy(l); $("label").value=""; load(); }catch(err){ $("pmsg").className="msg bad"; $("pmsg").textContent=err.message; }};
+$("rows").onclick=async e=>{const b=e.target.closest("button"); if(!b) return;
+  try{ if(b.dataset.copy) return copy(linkOf(b.dataset.copy));
+    if(b.dataset.toggle) await api("PATCH",{code:b.dataset.toggle,active:b.dataset.active!=="true"});
+    if(b.dataset.reset) await api("PATCH",{code:b.dataset.reset,resetDevices:true});
+    load(); }catch(err){ $("pmsg").className="msg bad"; $("pmsg").textContent=err.message; }};
+</script>
+</body>
+</html>

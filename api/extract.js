@@ -40,7 +40,11 @@ function images(html, base, ld) {
   return [...set].filter(u => !/logo|icon|avatar|sprite|placeholder|banner|whatsapp|facebook|google/i.test(u)).slice(0, 12);
 }
 
+const { session } = require("../lib/auth");
+
 module.exports = async (req, res) => {
+  let who = null; try { who = await session(req); } catch (e) {}
+  if (!who) return res.status(401).json({ error: "Tu sesión venció. Volvé a entrar con tu código." });
   const url = (req.query && req.query.url) || "";
   res.setHeader("Cache-Control", "s-maxage=600");
   if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "Pegá un link que empiece con http:// o https://" });

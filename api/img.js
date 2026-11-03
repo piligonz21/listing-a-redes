@@ -1,5 +1,9 @@
 // Trae una foto del aviso para poder dibujarla en el diseño (evita el bloqueo CORS del canvas).
+const { session } = require("../lib/auth");
+
 module.exports = async (req, res) => {
+  let who = null; try { who = await session(req); } catch (e) {}
+  if (!who) return res.status(401).json({ error: "Tu sesión venció. Volvé a entrar con tu código." });
   const url = (req.query && req.query.url) || "";
   if (!/^https?:\/\//i.test(url)) return res.status(400).end();
   try {
