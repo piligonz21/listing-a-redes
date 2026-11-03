@@ -335,7 +335,7 @@ $("logoClear").onclick=()=>{S.logo=null;$("logoInput").value="";$("logoClear").h
 function data(){
   const v=k=>$(k).value.trim();
   return {src:v("src"),title:v("f_title"),op:$("f_op").value,type:v("f_type"),loc:v("f_loc"),price:v("f_price"),m2:v("f_m2"),lot:v("f_lot"),amb:v("f_amb"),dorm:v("f_dorm"),bath:v("f_bath"),car:v("f_car"),
-    hl:v("f_hl").split("\n").map(s=>s.trim()).filter(Boolean).slice(0,4),lang:$("f_lang").value,accent:$("f_accent").value,brand:v("f_brand"),handle:v("f_handle"),cta:v("f_cta"),credit:v("f_credit")};
+    hl:v("f_hl").split("\n").map(s=>s.trim()).filter(Boolean).slice(0,4),lang:$("f_lang").value,accent:$("f_accent").value,brand:v("f_brand"),handle:v("f_handle"),cta:v("f_cta"),credit:v("f_credit"),raw:$("raw").value};
 }
 function facts(d,t){
   return [[d.m2,t.m2],[d.lot,t.lot],[d.amb,t.amb],[d.dorm,t.dorm],[d.bath,t.bath],[d.car,t.car]].filter(f=>f[0]);
@@ -431,15 +431,17 @@ const STYLES = {
   oscuro:{name:"Editorial oscuro", draw(x,W,H,k,c){
     const M=W*0.074, bg="#2B1E17", cream="#F2EADF", muted="#BFAF9F", ac=c.accent, cx=W/2;
     if(k==="cover"||k==="photo"){
-      const band=k==="cover"?H*0.3:H*0.2, top=H-band;
+      const band=k==="cover"?H*0.3:H*(c.sub?0.3:0.2), top=H-band;
       x.fillStyle=bg; x.fillRect(0,0,W,H); coverFit(x,c.img,0,0,W,top);
       if(k==="cover") drawLogo(x,cx,M*0.6,W*0.32,W*0.08,"center");
       const f=fit(x,k==="cover"?c.title:c.cap,W-2*M,2,k==="cover"?W*0.085:W*0.06,W*0.04,F.mont(800));
       const eh=c.eyebrow?W*0.065:0, th=f.size*(0.8+(f.lines.length-1)*1.05), lh=W*0.04;
-      let y=top+(band-(lh+eh+th))/2;
+      x.font=F.mont(500)(W*0.028); const sl=c.sub?wrap(x,c.sub,W-2*M).slice(0,3):[], shh=sl.length?W*0.03+sl.length*W*0.04:0;
+      let y=top+(band-(lh+eh+th+shh))/2;
       x.fillStyle=ac; x.fillRect(cx-W*0.03,y,W*0.06,6); y+=lh;
       if(eh){ x.fillStyle=muted; sfit(x,c.eyebrow.toUpperCase(),cx,y+W*0.025,5,W-2*M,F.mont(600),W*0.022); y+=eh; }
-      x.font=F.mont(800)(f.size); x.fillStyle=cream; lines(x,f,cx,y+f.size*0.8,1.05,"center");
+      x.font=F.mont(800)(f.size); x.fillStyle=cream; const ye=lines(x,f,cx,y+f.size*0.8,1.05,"center");
+      if(sl.length){ x.font=F.mont(500)(W*0.028); x.fillStyle=muted; x.textAlign="center"; sl.forEach((l,i)=>x.fillText(l,cx,ye+W*0.065+i*W*0.04)); x.textAlign="left"; }
     } else if(k==="facts"){
       x.fillStyle=cream; x.fillRect(0,0,W,H);
       x.fillStyle=ac; sfit(x,c.factsLabel.toUpperCase(),cx,M+W*0.06,6,W-2*M,F.mont(700),W*0.03);
@@ -463,7 +465,8 @@ const STYLES = {
     if(!drawLogo(x,cx,top,W*0.3,W*0.07,"center")&&c.brand){ x.fillStyle=white; sfit(x,c.brand.toUpperCase(),cx,top+W*0.05,6,W-2*M,F.jost(500),W*0.026); }
     if(k==="cover"||k==="photo"){
       const f=fit(x,(k==="cover"?c.title:c.cap).toUpperCase(),W-2*M,2,W*(k==="cover"?0.085:0.07),W*0.05,F.corm(500)); x.fillStyle=white;
-      lines(x,f,cx,top+W*0.2,1.0,"center");
+      const ye=lines(x,f,cx,top+W*0.2,1.0,"center");
+      if(c.sub){ x.font=F.jost(400)(W*0.032); x.fillStyle=gold; x.textAlign="center"; wrap(x,c.sub,W-3*M).slice(0,3).forEach((l,i)=>x.fillText(l,cx,ye+W*0.07+i*W*0.045)); x.textAlign="left"; }
       if(c.eyebrow){ x.fillStyle=gold; sfit(x,c.eyebrow.toUpperCase(),cx,H-H*0.07,4,W-2*M,F.jost(600),W*0.03); }
     } else if(k==="facts"){
       const f=fit(x,c.factsLabel.toUpperCase(),W-2*M,1,W*0.07,W*0.05,F.corm(500)); x.fillStyle=white; lines(x,f,cx,top+W*0.22,1,"center");
@@ -498,7 +501,9 @@ const STYLES = {
       const ft=fit(x,c.title,W-2*M,2,W*0.05,W*0.035,F.corm(500,"italic")); lines(x,ft,cx,by+W*0.1,1.1,"center");
     } else if(k==="photo"){
       vgrad(x,H,H*0.55,"rgba(0,0,0,0.6)","rgba(0,0,0,0)",W);
-      const f=fit(x,c.cap,W-2*M,2,W*0.075,W*0.05,F.bod(400)); x.fillStyle=white; lines(x,f,cx,H-M-f.size*(f.lines.length-1)*1.05,1.05,"center");
+      x.font=F.corm(500,"italic")(W*0.042); const sl=c.sub?wrap(x,c.sub,W-3*M).slice(0,3):[], shh=sl.length?W*0.03+sl.length*W*0.05:0;
+      const f=fit(x,c.cap,W-2*M,2,W*0.075,W*0.05,F.bod(400)); x.fillStyle=white; const ye=lines(x,f,cx,H-M-shh-f.size*(f.lines.length-1)*1.05,1.05,"center");
+      if(sl.length){ x.font=F.corm(500,"italic")(W*0.042); x.textAlign="center"; sl.forEach((l,i)=>x.fillText(l,cx,ye+W*0.075+i*W*0.05)); x.textAlign="left"; }
     } else {
       x.fillStyle="rgba(0,0,0,0.35)"; x.fillRect(0,0,W,H);
       const f=fit(x,c.visit,W-2*M,2,W*0.13,W*0.08,F.bod(400)); x.fillStyle=white; const yb=lines(x,f,cx,H*0.42,1.0,"center");
@@ -513,7 +518,7 @@ const STYLES = {
     clipCover(x,c.img,0,0,sw,sh,0,0,W,H);
     const px=vertical?0:sw, pw=vertical?W:W-sw, py=vertical?sh:0, ph=vertical?H-sh:H, cx=px+pw/2, M=pw*0.1, iw=pw-2*M;
     const head=k==="cta"?c.visit:k==="facts"?c.factsLabel:k==="photo"?c.cap:c.title;
-    const items=k==="facts"?c.facts.slice(0,6).map(f=>f[0]+" "+f[1]):k==="cta"&&c.cta?[c.cta]:[];
+    const items=k==="facts"?c.facts.slice(0,6).map(f=>f[0]+" "+f[1]):k==="cta"&&c.cta?[c.cta]:k==="photo"&&c.sub?[c.sub]:[];
     const btn=k==="cta"?c.handle:k==="facts"?c.price:"";
     const logoH=S.logo?W*0.09:c.brand?W*0.07:0, subH=c.eyebrow?W*0.06:0;
     // titular: finas + última palabra en negrita si entra en una línea; si no, en varias líneas
@@ -522,7 +527,7 @@ const STYLES = {
     while(one()>iw&&size>W*0.034) size-=2;
     const single=one()<=iw, fh=single?null:fit(x,head,iw,3,W*0.046,W*0.03,F.jost(400));
     const headH=single?size:fh.size*(1+(fh.lines.length-1)*1.15);
-    x.font=F.jost(400)(W*0.024); const itemLines=items.map(it=>wrap(x,it.toUpperCase(),iw-W*0.04).slice(0,2));
+    x.font=F.jost(400)(W*0.024); const itemLines=items.map(it=>wrap(x,it.toUpperCase(),iw-W*0.04).slice(0,k==="photo"?5:2));
     const itemsH=itemLines.reduce((a,l)=>a+l.length*W*0.036+W*0.035,0);
     const total=logoH+subH+headH+W*0.07+itemsH+(btn?W*0.12:0);
     let y=py+Math.max(W*0.04,(ph-total)/2);
@@ -552,7 +557,7 @@ const STYLES = {
     vgrad(x,fy+fh*0.6,H,"rgba(0,0,0,0)","rgba(0,0,0,0.5)",W);
     const white="#FFFFFF", M=W*0.1, cx=W/2;
     const a = k==="cta"? c.visit+"." : k==="facts"? c.factsLabel+"." : k==="photo"? c.cap : c.title;
-    const b = k==="cta"? c.cta : k==="facts"? c.facts.slice(0,6).map(f=>f[0]+" "+f[1]).join("  ·  ") : k==="cover"? c.eyebrow : "";
+    const b = k==="cta"? c.cta : k==="facts"? c.facts.slice(0,6).map(f=>f[0]+" "+f[1]).join("  ·  ") : k==="cover"? c.eyebrow : (c.sub||"");
     x.shadowColor="rgba(0,0,0,0.35)"; x.shadowBlur=12; x.fillStyle=white;
     let y=fy+fh+W*(vertical?0.14:0.1);
     const fa=fit(x,a,W-2*M,2,W*0.06,W*0.036,F.corm(500,"italic")); lines(x,fa,cx,y,1.15,"center"); y+=(fa.lines.length-1)*fa.size*1.15+W*0.07;
@@ -573,7 +578,7 @@ const STYLES = {
     else if(c.brand){ x.fillStyle=navy; const fb=fit(x,c.brand.toUpperCase(),cw-2*pad,2,W*0.04,W*0.026,F.bod(500)); lines(x,fb,mid,y+fb.size,1.05,"center"); y+=W*0.1; }
     else y+=W*0.02;
     x.fillStyle=navy; x.font=F.jost(400)(W*0.015);
-    const small = k==="facts"? c.facts.slice(0,6).map(f=>f[0]+" "+f[1]).join(" · ") : k==="cta"? c.cta : k==="cover"? c.eyebrow : "";
+    const small = k==="facts"? c.facts.slice(0,6).map(f=>f[0]+" "+f[1]).join(" · ") : k==="cta"? c.cta : k==="cover"? c.eyebrow : (c.sub||"");
     if(small){ const sl=wrap(x,small.toUpperCase(),cw-2*pad).slice(0,4); x.textAlign="center"; sl.forEach((l,i)=>x.fillText(l,mid,y+i*W*0.022)); x.textAlign="left"; y+=W*0.022*sl.length+W*0.05; }
     const head = k==="cta"? c.visit : k==="facts"? c.factsLabel : k==="photo"? c.cap : c.title;
     const f=fit(x,head.toUpperCase(),cw-2*pad,3,W*0.05,W*0.03,F.bod(500)); x.fillStyle=navy; let yb=lines(x,f,mid,y+f.size*0.8,1.05,"center");
@@ -592,7 +597,21 @@ const FILL={es:["Conocé cada espacio","Pensada para disfrutar","Cada detalle cu
 function content(d,t){
   const big = d.lang==="es"? (d.op==="venta"?"En venta":"Alquiler") : (d.op==="venta"?"For sale":"For rent");
   return {title:d.title||d.type||(d.lang==="es"?"Tu propiedad":"Your property"), loc:d.loc, eyebrow:opLabel(d,t), facts:facts(d,t), hl:d.hl,
-    price:d.price||t.ask, cta:d.cta||t.cta, visit:t.visit, handle:d.handle, brand:d.brand, factsLabel:t.facts, accent:d.accent, big, lang:d.lang};
+    price:d.price||t.ask, cta:d.cta||t.cta, visit:t.visit, handle:d.handle, brand:d.brand, factsLabel:t.facts, accent:d.accent, big, lang:d.lang,
+    desc:d.lang==="es"?sentences(d.raw):[]};
+}
+// Frases de la descripción del aviso para acompañar cada foto (sin contactos ni precios).
+function sentences(raw){
+  const out=[], seen=new Set();
+  String(raw||"").replace(/\r/g,"").split(/\n+|(?<=[.!?])\s+/).forEach(x=>{
+    let t=x.replace(/^[-•*·\s]+/,"").replace(/\s+/g," ").trim();
+    if(/https?:|www\.|@|whats|tel[:é.]|\d{6,}|U\$S|USD|\$\s?\d/i.test(t)) return;
+    if(t.length>150){ const c=t.slice(0,150).lastIndexOf(","); t=c>40?t.slice(0,c)+".":""; }
+    if(t.length<25||t.split(" ").length<4) return;
+    if(!/[.!?]$/.test(t)) t+=".";
+    const k=t.toLowerCase(); if(!seen.has(k)){seen.add(k); out.push(t[0].toUpperCase()+t.slice(1));}
+  });
+  return out;
 }
 // Reparte textos distintos para cada foto (puntos fuertes, después algunos datos) y deja el resto de los datos para la placa de datos.
 function plan(base,n){
@@ -600,7 +619,7 @@ function plan(base,n){
   base.hl.forEach(h=>{ if(!seen.has(h.toLowerCase())){ seen.add(h.toLowerCase()); caps.push(h); } });
   while(caps.length<n&&fs.length>3){ const f=fs.pop(); caps.push(`${f[0]} ${f[1]}`); }
   for(const g of FILL[base.lang]||FILL.es){ if(caps.length>=n) break; caps.push(g); }
-  return {caps:caps.slice(0,n), facts:fs};
+  return {caps:caps.slice(0,n), subs:Array.from({length:n},(_,i)=>(base.desc||[])[i]||""), facts:fs};
 }
 function piece(style,W,H,k,base,extra){
   const c=canvas(W,H),x=c.getContext("2d"), o={...base,...extra};
@@ -616,7 +635,7 @@ function render(){
   const extra=Math.min(Math.max(n-1,0),4) || (n?0:2), pl=plan(base,extra);
   feed.push({c:piece(st,W,H,"cover",base,{img:photo(0),img2:photo(1)}),name:"carrusel-01-portada"});
   for(let i=0;i<extra;i++)
-    feed.push({c:piece(st,W,H,"photo",base,{img:photo(i+1),img2:photo(i+2)||photo(0),cap:pl.caps[i]}),name:`carrusel-0${feed.length+1}-foto`});
+    feed.push({c:piece(st,W,H,"photo",base,{img:photo(i+1),img2:photo(i+2)||photo(0),cap:pl.caps[i],sub:pl.subs[i]}),name:`carrusel-0${feed.length+1}-foto`});
   feed.push({c:piece(st,W,H,"facts",{...base,facts:pl.facts},{img:photo(Math.min(n-1,5))||photo(0),img2:photo(1)||photo(0)}),name:`carrusel-0${feed.length+1}-datos`});
   feed.push({c:piece(st,W,H,"cta",base,{img:photo(n>2?2:0),img2:photo(0)}),name:`carrusel-0${feed.length+1}-contacto`});
   const SW=1080,SH=1920;
@@ -750,7 +769,7 @@ function reelText(x,th,W,H,local,dur,eyebrow,title,sub,style,c){
     x.globalAlpha=out; x.font=th.title(f.size); x.textAlign=al; x.fillText(l,ax,by+(1-li)*f.size*1.1); x.restore(); });
   x.textAlign="left";
   if(sub){ const si=ease((local-0.75)/0.6); x.globalAlpha=Math.min(si,out); x.font=th.small(W*0.034); x.fillStyle=th.ink; x.textAlign=al;
-    wrap(x,sub,W-2*M).slice(0,2).forEach((l,i)=>x.fillText(l,ax,y0+W*0.12+f.lines.length*f.size*1.08+W*0.03+i*W*0.048+(1-si)*14)); x.textAlign="left"; }
+    wrap(x,sub,W-2*M).slice(0,3).forEach((l,i)=>x.fillText(l,ax,y0+W*0.12+f.lines.length*f.size*1.08+W*0.03+i*W*0.048+(1-si)*14)); x.textAlign="left"; }
   x.globalAlpha=1;
 }
 // marco fino que se dibuja en las esquinas (portada y cierre)
@@ -767,8 +786,8 @@ function buildReel(){
     cornerFrame(x,W,H,Math.min((l-0.2)/0.9,1-(l-(du-0.5))/0.5),"#FFFFFF");
     if(l<du-0.4) drawLogo(x,W/2,H*0.08,W*0.4,W*0.09,"center");}});
   for(let i=1;i<Math.min(n,7);i++){
-    const txt=pl.caps[i-1];
-    scenes.push({dur:2.6,draw:(x,l,du)=>{kenBurns(x,photo(i),W,H,l/du,i); reelText(x,th,W,H,l,du,"",txt,"",style,c);}});
+    const txt=pl.caps[i-1], sb=pl.subs[i-1];
+    scenes.push({dur:sb?3.4:2.6,draw:(x,l,du)=>{kenBurns(x,photo(i),W,H,l/du,i); reelText(x,th,W,H,l,du,"",txt,sb,style,c);}});
   }
   const bg=blurred(photo(n>1?1:0),W,H,24);
   scenes.push({dur:3.4,draw:(x,l,du)=>{
