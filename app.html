@@ -623,9 +623,19 @@ function plan(base,n){
 }
 function piece(style,W,H,k,base,extra){
   const c=canvas(W,H),x=c.getContext("2d"), o={...base,...extra};
-  if(k!=="cta") o.brand="";       // sin logo, el nombre va una sola vez (en el cierre)
+  if(k!=="cta") o.brand="";       // el cierre ya muestra nombre y contacto a su manera
   if(k!=="cover") o.eyebrow="";   // operación y zona solo en la portada
-  STYLES[style].draw(x,W,H,k,o); return c;
+  STYLES[style].draw(x,W,H,k,o);
+  if(k!=="cta") signature(x,W,H,style,k,base);
+  return c;
+}
+// Firma chica arriba de cada placa: nombre + @ o WhatsApp
+function signature(x,W,H,style,k,b){
+  const txt=[b.brand,b.handle].filter(Boolean).join("   ·   ").toUpperCase(); if(!txt) return;
+  const dark=k==="facts"&&(style==="oscuro"||style==="sold");
+  x.save(); x.fillStyle=dark?"#2B2B2B":"#FFFFFF";
+  if(!dark){ x.shadowColor="rgba(0,0,0,0.55)"; x.shadowBlur=W*0.012; }
+  sfit(x,txt,W/2,H*0.035+W*0.012,3,W*0.86,F.jost(500),W*0.021); x.restore();
 }
 
 function render(){
@@ -811,10 +821,15 @@ function buildReel(){
     cornerFrame(x,W,H,(l-0.6)/0.9,"#FFFFFF");
     x.globalAlpha=ease((l-0.8)/0.6); drawLogo(x,W/2,H*0.08,W*0.4,W*0.09,"center"); x.globalAlpha=1;}});
   let acc=0; scenes.forEach(s=>{s.start=acc; acc+=s.dur;});
-  return {W,H,scenes,total:acc};
+  return {W,H,scenes,total:acc,sig:{brand:c.brand,handle:c.handle}};
 }
 // transiciones minimalistas que se alternan: fundido, cortina con línea fina y recuadro que se abre
 function drawReelFrame(x,reel,time){
+  drawReelFrame0(x,reel,time);
+  const n=reel.scenes.length, last=reel.scenes[n-1];
+  if(time<last.start+0.3){ x.save(); x.globalAlpha=Math.min(1,time/0.8,(last.start+0.3-time)/0.3); signature(x,reel.W,reel.H,"","photo",reel.sig); x.restore(); }
+}
+function drawReelFrame0(x,reel,time){
   const {scenes,W,H}=reel, X=0.6;
   let i=scenes.findIndex(s=>time<s.start+s.dur); if(i<0) i=scenes.length-1;
   const s=scenes[i], l=time-s.start;
