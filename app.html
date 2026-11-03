@@ -693,24 +693,39 @@ function reelText(x,th,W,H,local,dur,eyebrow,title,sub,style,c){
   x.font=th.title(10); const f=fit(x,tt,W-2*M,3,W*0.095,W*0.055,th.title);
   const blockH=f.lines.length*f.size*1.08+W*0.16;
   const y0=H*0.68-blockH/2;
-  // fondo para que se lea el texto
-  if(style==="arco"){ x.globalAlpha=a; x.fillStyle=th.card; x.fillRect(M*0.6,y0-W*0.06,W-1.2*M,blockH+W*0.1); x.globalAlpha=1; }
-  else if(style==="oscuro"){ x.globalAlpha=a*0.92; x.fillStyle=th.panel; x.fillRect(0,y0-W*0.07,W,blockH+W*0.12); x.globalAlpha=1; }
+  // fondo para que se lea el texto: se despliega suave
+  const bg=ease((local-0.05)/0.7);
+  if(style==="arco"){ const w=(W-1.2*M)*bg; x.globalAlpha=out; x.fillStyle=th.card; x.fillRect(W/2-w/2,y0-W*0.06,w,blockH+W*0.1); x.globalAlpha=1; }
+  else if(style==="oscuro"){ x.globalAlpha=0.92*out; x.fillStyle=th.panel; x.fillRect(0,y0-W*0.07,W*bg,blockH+W*0.12); x.globalAlpha=1; }
   else { const g=x.createLinearGradient(0,H*0.35,0,H); g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,(th.tint||"rgba(0,0,0,")+(0.75*a)+")"); x.fillStyle=g; x.fillRect(0,H*0.35,W,H*0.65); }
   const center=style!=="oscuro", ax=center?W/2:M, al=center?"center":"left";
-  x.globalAlpha=a; x.fillStyle=th.accent||c.accent; x.font=th.small(W*0.028);
-  spaced(x,eyebrow.toUpperCase(),ax,y0+(1-inT)*30,5,al);
+  // etiqueta con línea fina que se dibuja
+  const acc=th.accent||c.accent, ln=ease((local-0.2)/0.7)*W*0.12;
+  x.globalAlpha=out; x.fillStyle=acc; x.fillRect(center?W/2-ln/2:M,y0-W*0.045,ln,3);
+  x.globalAlpha=a; x.font=th.small(W*0.028); spaced(x,eyebrow.toUpperCase(),ax,y0,5+(1-inT)*6,al);
+  // cada línea sube desde una máscara
   x.fillStyle=th.ink;
-  f.lines.forEach((l,i)=>{ const li=ease((local-0.3-i*0.12)/0.6); x.globalAlpha=Math.min(li,out); x.font=th.title(f.size); x.textAlign=al; x.fillText(l,ax,y0+W*0.1+i*f.size*1.08+f.size*0.8+(1-li)*40); });
+  f.lines.forEach((l,i)=>{ const li=ease((local-0.3-i*0.14)/0.7); if(li<=0) return;
+    const by=y0+W*0.1+i*f.size*1.08+f.size*0.8;
+    x.save(); x.beginPath(); x.rect(0,by-f.size*1.0,W,f.size*1.28); x.clip();
+    x.globalAlpha=out; x.font=th.title(f.size); x.textAlign=al; x.fillText(l,ax,by+(1-li)*f.size*1.1); x.restore(); });
   x.textAlign="left";
-  if(sub){ const si=ease((local-0.7)/0.6); x.globalAlpha=Math.min(si,out); x.font=th.small(W*0.034); x.fillStyle=th.ink; x.textAlign=al;
-    wrap(x,sub,W-2*M).slice(0,2).forEach((l,i)=>x.fillText(l,ax,y0+W*0.12+f.lines.length*f.size*1.08+W*0.03+i*W*0.048)); x.textAlign="left"; }
+  if(sub){ const si=ease((local-0.75)/0.6); x.globalAlpha=Math.min(si,out); x.font=th.small(W*0.034); x.fillStyle=th.ink; x.textAlign=al;
+    wrap(x,sub,W-2*M).slice(0,2).forEach((l,i)=>x.fillText(l,ax,y0+W*0.12+f.lines.length*f.size*1.08+W*0.03+i*W*0.048+(1-si)*14)); x.textAlign="left"; }
   x.globalAlpha=1;
+}
+// marco fino que se dibuja en las esquinas (portada y cierre)
+function cornerFrame(x,W,H,p,color){
+  if(p<=0) return; const m=W*0.05, L=W*0.09*ease(p);
+  x.save(); x.strokeStyle=color; x.lineWidth=3; x.globalAlpha=0.9; x.beginPath();
+  [[m,m,1,1],[W-m,m,-1,1],[m,H-m,1,-1],[W-m,H-m,-1,-1]].forEach(([cx,cy,sx,sy])=>{ x.moveTo(cx+sx*L,cy); x.lineTo(cx,cy); x.lineTo(cx,cy+sy*L); });
+  x.stroke(); x.restore();
 }
 function buildReel(){
   const d=data(), t=T[d.lang], c=content(d,t), style=S.style, th=REEL_THEME[style], W=1080, H=1920;
   const n=S.photos.length, scenes=[];
   scenes.push({dur:3.2,draw:(x,l,du)=>{kenBurns(x,photo(0),W,H,l/du,0); reelText(x,th,W,H,l,du,c.eyebrow,c.title,c.price,style,c);
+    cornerFrame(x,W,H,Math.min((l-0.2)/0.9,1-(l-(du-0.5))/0.5),"#FFFFFF");
     if(l<du-0.4) drawLogo(x,W/2,H*0.08,W*0.4,W*0.09,"center");}});
   for(let i=1;i<Math.min(n,7);i++){
     const txt=c.photoText[i-1]||c.title;
@@ -721,6 +736,9 @@ function buildReel(){
     x.drawImage(bg,0,0); x.fillStyle="rgba(0,0,0,0.45)"; x.fillRect(0,0,W,H);
     const M=W*0.1, out=1-ease((l-(du-0.45))/0.4);
     x.globalAlpha=ease(l/0.5)*out; x.fillStyle=th.accent||"#FFF"; x.font=th.small(W*0.03); spaced(x,c.factsLabel.toUpperCase(),W/2,H*0.25,6,"center");
+    const rows=Math.ceil(Math.min(c.facts.length,6)/2);
+    for(let r=1;r<rows;r++){ const lp=ease((l-0.4-r*0.2)/0.8); x.globalAlpha=0.35*out; x.fillStyle="#FFF"; x.fillRect(W/2-W*0.35*lp,H*0.36+r*H*0.16-H*0.09,W*0.7*lp,2); }
+    { const vp=ease((l-0.3)/0.9); x.globalAlpha=0.35*out; x.fillStyle="#FFF"; x.fillRect(W/2-1,H*0.29,2,(rows*H*0.16-H*0.04)*vp); }
     c.facts.slice(0,6).forEach((fa,i)=>{
       const p=ease((l-0.3-i*0.2)/0.6); if(p<=0) return;
       const num=/^\d+$/.test(fa[0])?String(Math.round(+fa[0]*p)):fa[0];
@@ -732,17 +750,27 @@ function buildReel(){
     x.globalAlpha=ease((l-1.2)/0.6)*out; x.font=th.small(W*0.042); x.fillStyle="#FFF"; x.textAlign="center"; x.fillText(c.price,W/2,H*0.86); x.textAlign="left"; x.globalAlpha=1;
   }});
   scenes.push({dur:3.4,draw:(x,l,du)=>{kenBurns(x,photo(n>2?2:0),W,H,l/du,5); reelText(x,th,W,H,l,du+5,c.handle||c.brand||c.eyebrow,c.visit+".",c.cta,style,c);
+    cornerFrame(x,W,H,(l-0.6)/0.9,"#FFFFFF");
     x.globalAlpha=ease((l-0.8)/0.6); drawLogo(x,W/2,H*0.08,W*0.4,W*0.09,"center"); x.globalAlpha=1;}});
   let acc=0; scenes.forEach(s=>{s.start=acc; acc+=s.dur;});
   return {W,H,scenes,total:acc};
 }
+// transiciones minimalistas que se alternan: fundido, cortina con línea fina y recuadro que se abre
 function drawReelFrame(x,reel,time){
-  const {scenes,W,H}=reel, X=0.45;
+  const {scenes,W,H}=reel, X=0.6;
   let i=scenes.findIndex(s=>time<s.start+s.dur); if(i<0) i=scenes.length-1;
   const s=scenes[i], l=time-s.start;
   x.fillStyle="#000"; x.fillRect(0,0,W,H);
-  s.draw(x,l,s.dur);
-  if(i>0&&l<X){ const p=scenes[i-1]; x.globalAlpha=1-l/X; p.draw(x,p.dur-0.001,p.dur); x.globalAlpha=1; }
+  if(i===0||l>=X){ s.draw(x,l,s.dur); return; }
+  const p=scenes[i-1], q=ease(l/X), kind=["fade","wipe","inset"][i%3];
+  p.draw(x,p.dur-0.001,p.dur);
+  if(kind==="fade"){ x.globalAlpha=q; s.draw(x,l,s.dur); x.globalAlpha=1; return; }
+  x.save(); x.beginPath();
+  if(kind==="wipe"){ x.rect(0,0,W*q,H); }
+  else { const iw=W*(0.55+0.45*q), ih=H*(0.55+0.45*q); x.rect((W-iw)/2,(H-ih)/2,iw,ih); }
+  x.clip(); s.draw(x,l,s.dur); x.restore();
+  if(kind==="wipe"&&q<1){ x.fillStyle="#FFFFFF"; x.globalAlpha=0.9; x.fillRect(W*q-2,0,3,H); x.globalAlpha=1; }
+  if(kind==="inset"&&q<1){ const iw=W*(0.55+0.45*q), ih=H*(0.55+0.45*q); x.strokeStyle="#FFFFFF"; x.lineWidth=3; x.globalAlpha=1-q; x.strokeRect((W-iw)/2,(H-ih)/2,iw,ih); x.globalAlpha=1; }
 }
 function pickMime(){
   if(typeof MediaRecorder==="undefined") return null;
