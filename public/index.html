@@ -7,8 +7,7 @@
 <meta name="description" content="Pegá el link de una propiedad y obtené el carrusel, las historias y la portada de reel para Instagram.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;800&family=Manrope:wght@400;500;600;700&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Jost:wght@300;400;500;600;700&display=swap">
 <style>
 /* Layout: herramienta de dos columnas. Formulario a la izquierda, piezas renderizadas a la derecha; en celular se apilan. */
 :root{
@@ -58,7 +57,8 @@ button:disabled{opacity:.5;cursor:default}
 .thumb .x{position:absolute;right:3px;top:3px;padding:0 6px;font-size:12px;line-height:18px;border-radius:5px;background:rgba(0,0,0,.6);color:#fff;border:0}
 .thumb .mv{position:absolute;bottom:3px;left:3px;right:3px;display:flex;justify-content:space-between}
 .thumb .mv button{padding:0 6px;font-size:12px;line-height:18px;border-radius:5px;background:rgba(0,0,0,.6);color:#fff;border:0}
-.styles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.styles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.style-opt img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;border-radius:6px;margin-bottom:6px;background:var(--line)}
 .style-opt{border:1.5px solid var(--line);border-radius:10px;padding:8px;cursor:pointer;text-align:left;background:var(--bg)}
 .style-opt[aria-pressed="true"]{border-color:var(--accent)}
 .sw{display:flex;height:26px;border-radius:6px;overflow:hidden;margin-bottom:6px}
@@ -154,7 +154,7 @@ figcaption button{padding:4px 9px;font-size:12px}
           <div class="fields">
             <div><label for="f_lang">Idioma del diseño</label>
               <select id="f_lang"><option value="es">Español</option><option value="en">English</option></select></div>
-            <div><label for="f_accent">Color de acento</label><input id="f_accent" type="color" value="#5A0F14" style="height:40px;padding:4px"></div>
+            <div id="accentWrap"><label for="f_accent">Color de acento</label><input id="f_accent" type="color" value="#5A0F14" style="height:40px;padding:4px"></div>
             <div><label for="f_brand">Marca / inmobiliaria</label><input id="f_brand" type="text"></div>
             <div><label for="f_handle">@ o WhatsApp</label><input id="f_handle" type="text"></div>
             <div class="full"><label for="f_cta">Llamado a la acción</label><input id="f_cta" type="text" placeholder="Escribinos por DM y coordinamos tu visita"></div>
@@ -211,28 +211,12 @@ figcaption button{padding:4px 9px;font-size:12px}
 <script>
 (function(){
 const $ = id => document.getElementById(id);
-const STYLES = {
-  editorial:{name:"Editorial oscuro", bg:"#2B1E17", alt:"#F2EADF", ink:"#F2EADF", altInk:"#2B1E17", muted:"#BFAF9F", accent:"#5A0F14"},
-  crema:{name:"Crema", bg:"#F2EADF", alt:"#2B1E17", ink:"#2B1E17", altInk:"#F2EADF", muted:"#8A7A6C", accent:"#5A0F14"},
-  blanco:{name:"Blanco agencia", bg:"#FFFFFF", alt:"#121212", ink:"#121212", altInk:"#FFFFFF", muted:"#8A8580", accent:"#A60C0C"}
-};
 const T = {
   es:{venta:"En venta", alquiler:"En alquiler", temporario:"Alquiler temporario", facts:"Datos clave", m2:"m² cubiertos", lot:"m² terreno", amb:"ambientes", dorm:"dormitorios", bath:"baños", car:"cocheras", ask:"Precio a consultar", visit:"Coordiná tu visita", cta:"Escribinos y te pasamos la ficha completa", swipe:"Deslizá →", price:"Precio"},
   en:{venta:"For sale", alquiler:"For rent", temporario:"Short-term rental", facts:"Key facts", m2:"sq m built", lot:"sq m lot", amb:"rooms", dorm:"bedrooms", bath:"bathrooms", car:"parking", ask:"Price on request", visit:"Book a visit", cta:"Send us a message for the full listing", swipe:"Swipe →", price:"Price"}
 };
-const S = {style:"editorial", photos:[], logo:null};
+const S = {style:"oscuro", photos:[], logo:null};
 const out = {feed:[], stories:[], reel:[]};
-
-/* ---------- estilos ---------- */
-const stylesEl = $("styles");
-Object.entries(STYLES).forEach(([k,v])=>{
-  const b=document.createElement("button"); b.type="button"; b.className="style-opt"; b.dataset.k=k;
-  b.innerHTML=`<div class="sw"><span style="background:${v.bg}"></span><span style="background:${v.alt}"></span><span style="background:${v.accent}"></span></div><b>${v.name}</b>`;
-  b.onclick=()=>{S.style=k; $("f_accent").value=v.accent; markStyle(); schedule();};
-  stylesEl.appendChild(b);
-});
-function markStyle(){stylesEl.querySelectorAll(".style-opt").forEach(b=>b.setAttribute("aria-pressed", b.dataset.k===S.style));}
-markStyle();
 
 /* ---------- ejemplo inicial ---------- */
 const SAMPLE = {f_title:"Casa con jardín y pileta", f_type:"Casa", f_loc:"Ejemplo · Zona Norte", f_price:"", f_m2:"220", f_lot:"600", f_amb:"5", f_dorm:"3", f_bath:"2", f_car:"2", f_hl:"Jardín con pileta\nLiving con doble altura\nCocina integrada al comedor\nGalería con parrilla", f_brand:"Tu inmobiliaria", f_handle:"@tuinmobiliaria", f_cta:""};
@@ -341,148 +325,276 @@ function facts(d,t){
 
 /* ---------- dibujo ---------- */
 function canvas(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;return c;}
+function noPhoto(ctx,x,y,w,h){ctx.fillStyle="#CFC6BB";ctx.fillRect(x,y,w,h);ctx.fillStyle="#7A6E66";ctx.font="600 34px Manrope, sans-serif";ctx.textAlign="center";ctx.fillText("Subí tus fotos",x+w/2,y+h/2);ctx.textAlign="left";}
 function coverFit(ctx,img,x,y,w,h){
-  if(!img){ctx.fillStyle="#CFC6BB";ctx.fillRect(x,y,w,h);ctx.fillStyle="#7A6E66";ctx.font="600 34px Manrope, sans-serif";ctx.textAlign="center";ctx.fillText("Subí tus fotos",x+w/2,y+h/2);ctx.textAlign="left";return;}
+  if(!img){noPhoto(ctx,x,y,w,h);return;}
   const s=Math.max(w/img.naturalWidth,h/img.naturalHeight), sw=w/s, sh=h/s;
   ctx.drawImage(img,(img.naturalWidth-sw)/2,(img.naturalHeight-sh)/2,sw,sh,x,y,w,h);
 }
+function clipCover(ctx,img,cx,cy,cw,ch,fx,fy,fw,fh){ // dibuja la foto como si ocupara (fx..fw) pero solo dentro de (cx..cw)
+  ctx.save(); ctx.beginPath(); ctx.rect(cx,cy,cw,ch); ctx.clip(); coverFit(ctx,img,fx,fy,fw,fh); ctx.restore();
+}
+function blurred(img,w,h,k=28){
+  // desenfoque que anda en todos los navegadores: achicar y volver a agrandar
+  const small=canvas(Math.max(8,Math.round(w/k)),Math.max(8,Math.round(h/k))), sx=small.getContext("2d");
+  sx.imageSmoothingQuality="high"; coverFit(sx,img,0,0,small.width,small.height);
+  const mid=canvas(Math.round(w/4),Math.round(h/4)), mx=mid.getContext("2d"); mx.imageSmoothingQuality="high"; mx.drawImage(small,0,0,mid.width,mid.height);
+  const out=canvas(w,h), ox=out.getContext("2d"); ox.imageSmoothingQuality="high"; ox.drawImage(mid,0,0,w,h); return out;
+}
 function wrap(ctx,text,maxW){
-  const words=text.split(/\s+/), lines=[]; let line="";
+  const words=String(text).split(/\s+/).filter(Boolean), lines=[]; let line="";
   for(const w of words){const t=line?line+" "+w:w; if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;} else line=t;}
   if(line) lines.push(line); return lines;
 }
-function fitTitle(ctx,text,maxW,maxLines,start,min){
+function fit(ctx,text,maxW,maxLines,start,min,font){
   let size=start;
-  while(size>min){ctx.font=`800 ${size}px Montserrat, sans-serif`; const l=wrap(ctx,text,maxW); if(l.length<=maxLines) return {size,lines:l}; size-=4;}
-  ctx.font=`800 ${min}px Montserrat, sans-serif`; return {size:min,lines:wrap(ctx,text,maxW).slice(0,maxLines)};
+  while(size>min){ctx.font=font(size); const l=wrap(ctx,text,maxW); if(l.length<=maxLines&&l.every(x=>ctx.measureText(x).width<=maxW)) return {size,lines:l}; size-=3;}
+  ctx.font=font(min); return {size:min,lines:wrap(ctx,text,maxW).slice(0,maxLines)};
 }
-function label(ctx,text,x,y,color,size=24,spacing=5){
-  ctx.font=`600 ${size}px Montserrat, sans-serif`; ctx.fillStyle=color;
-  if("letterSpacing" in ctx){ctx.letterSpacing=spacing+"px";ctx.fillText(text.toUpperCase(),x,y);ctx.letterSpacing="0px";}
-  else ctx.fillText(text.toUpperCase().split("").join(" "),x,y);
+function lines(ctx,f,x,y,lh,align="left"){ctx.textAlign=align; f.lines.forEach((l,i)=>ctx.fillText(l,x,y+i*f.size*lh)); ctx.textAlign="left"; return y+(f.lines.length-1)*f.size*lh;}
+function spaced(ctx,text,x,y,sp,align="left"){
+  text=String(text); const w=[...text].reduce((a,ch)=>a+ctx.measureText(ch).width+sp,0)-sp;
+  let cx=align==="center"?x-w/2:align==="right"?x-w:x; ctx.textAlign="left";
+  for(const ch of text){ctx.fillText(ch,cx,y); cx+=ctx.measureText(ch).width+sp;} return w;
 }
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function arch(ctx,x,y,w,h){const r=w/2;ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x,y+r);ctx.arc(x+r,y+r,r,Math.PI,0);ctx.lineTo(x+w,y+h);ctx.closePath();}
+function vgrad(ctx,y0,y1,c0,c1,W){const g=ctx.createLinearGradient(0,y0,0,y1);g.addColorStop(0,c0);g.addColorStop(1,c1);ctx.fillStyle=g;ctx.fillRect(0,Math.min(y0,y1),W,Math.abs(y1-y0));}
 function drawLogo(ctx,x,y,maxW,maxH,align="right"){
   if(!S.logo) return false;
   const s=Math.min(maxW/S.logo.naturalWidth,maxH/S.logo.naturalHeight), w=S.logo.naturalWidth*s, h=S.logo.naturalHeight*s;
   const lx = align==="right"? x-w : align==="center"? x-w/2 : x;
   ctx.drawImage(S.logo,lx,y+(maxH-h)/2,w,h); return true;
 }
-function brandMark(ctx,st,x,y,align,color){
-  if(drawLogo(ctx,x,y,200,64,align)) return;
-  const d=data(); const name=d.brand||""; if(!name) return;
-  ctx.font="800 26px Montserrat, sans-serif"; ctx.fillStyle=color; ctx.textAlign=align; ctx.fillText(name,x,y+42); ctx.textAlign="left";
+function brandMark(ctx,c,x,y,align,color,font,sp=0,size=64){
+  if(drawLogo(ctx,x,y,size*3.2,size,align)) return;
+  if(!c.brand) return;
+  ctx.font=font; ctx.fillStyle=color; spaced(ctx,c.brand.toUpperCase(),x,y+size*0.66,sp,align);
 }
+function factGrid(ctx,c,x,y,w,cols,rowH,numFont,labFont,ink,align="left"){
+  const colW=w/cols;
+  c.facts.slice(0,6).forEach((fa,i)=>{const cx=x+(i%cols)*colW+(align==="center"?colW/2:0), cy=y+Math.floor(i/cols)*rowH;
+    ctx.fillStyle=ink; ctx.textAlign=align; ctx.font=numFont; ctx.fillText(fa[0],cx,cy+rowH*0.5);
+    ctx.font=labFont; ctx.globalAlpha=.75; ctx.fillText(fa[1],cx,cy+rowH*0.5+rowH*0.26); ctx.globalAlpha=1; ctx.textAlign="left";});
+  return y+Math.ceil(Math.min(c.facts.length,6)/cols)*rowH;
+}
+const F={
+  mont:(w)=>s=>`${w} ${s}px Montserrat, Arial, sans-serif`,
+  corm:(w,it="")=>s=>`${it} ${w} ${s}px "Cormorant Garamond", Georgia, serif`,
+  bod:(w,it="")=>s=>`${it} ${w} ${s}px "Bodoni Moda", Didot, Georgia, serif`,
+  jost:(w)=>s=>`${w} ${s}px Jost, "Helvetica Neue", Arial, sans-serif`
+};
+
+/* Cada estilo dibuja 4 tipos de pieza: cover, photo, facts, cta. W×H puede ser 4:5 o 9:16. */
+const STYLES = {
+  oscuro:{name:"Editorial oscuro", draw(x,W,H,k,c){
+    const M=W*0.074, bg="#2B1E17", cream="#F2EADF", muted="#BFAF9F", ac=c.accent;
+    if(k==="cover"||k==="photo"){
+      const band=k==="cover"?H*0.3:H*0.2;
+      x.fillStyle=bg; x.fillRect(0,0,W,H); coverFit(x,c.img,0,0,W,H-band);
+      const top=H-band; x.fillStyle=ac; x.fillRect(M,top+band*0.17,W*0.06,6);
+      x.font=F.mont(600)(W*0.022); x.fillStyle=muted; spaced(x,c.eyebrow.toUpperCase(),M,top+band*0.3,5);
+      const f=fit(x,c.title,W-2*M,2,k==="cover"?W*0.085:W*0.055,W*0.04,F.mont(800)); x.fillStyle=cream;
+      lines(x,f,M,top+band*0.3+f.size*1.15,1.05);
+      if(k==="cover") brandMark(x,c,W-M,top+band*0.06,"right",cream,F.mont(800)(W*0.022),2,W*0.05);
+    } else if(k==="facts"){
+      x.fillStyle=cream; x.fillRect(0,0,W,H);
+      x.font=F.mont(700)(W*0.024); x.fillStyle=ac; spaced(x,c.factsLabel.toUpperCase(),M,M+W*0.04,6);
+      const f=fit(x,c.title,W-2*M,2,W*0.06,W*0.04,F.mont(800)); x.fillStyle=bg; const yb=lines(x,f,M,M+W*0.13,1.05);
+      x.fillStyle=bg; x.globalAlpha=.25; x.fillRect(M,yb+W*0.05,W-2*M,2); x.globalAlpha=1;
+      if(c.facts.length) factGrid(x,c,M,yb+W*0.08,W-2*M,2,W*0.17,F.mont(800)(W*0.085),F.mont(500)(W*0.026),bg);
+      x.font=F.mont(800)(W*0.042); x.fillStyle=bg; x.fillText(c.price,M,H-M);
+    } else {
+      x.fillStyle=ac; x.fillRect(0,0,W,H); coverFit(x,c.img,M,M,W-2*M,H*0.42);
+      const f=fit(x,c.visit+".",W-2*M,2,W*0.1,W*0.06,F.mont(800)); x.fillStyle="#FFF"; const yb=lines(x,f,M,H*0.42+M+W*0.13,1.05);
+      x.font=F.mont(500)(W*0.032); wrap(x,c.cta,W-2*M).slice(0,2).forEach((l,i)=>x.fillText(l,M,yb+W*0.08+i*W*0.045));
+      if(c.handle){x.font=F.mont(800)(W*0.038); x.fillText(c.handle,M,H-M);}
+      brandMark(x,c,W-M,H-M-W*0.05,"right","#FFF",F.mont(800)(W*0.024),2,W*0.055);
+    }}},
+
+  cielo:{name:"Cielo premium", draw(x,W,H,k,c){
+    const M=W*0.07, gold="#E8C47A", deep="rgba(20,44,110,", white="#FFFFFF";
+    if(k==="facts"){
+      x.drawImage(blurred(c.img,W,H,20),0,0); x.fillStyle=deep+"0.55)"; x.fillRect(0,0,W,H);
+    } else coverFit(x,c.img,0,0,W,H);
+    if(k!=="facts"){ vgrad(x,0,H*0.55,deep+"0.92)",deep+"0)",W); vgrad(x,H,H*0.75,"rgba(0,0,0,0.55)","rgba(0,0,0,0)",W); }
+    x.fillStyle=white;
+    const top=H*0.06;
+    if(!drawLogo(x,W/2,top,W*0.3,W*0.07,"center")&&c.brand){x.font=F.jost(500)(W*0.026); spaced(x,c.brand.toUpperCase(),W/2,top+W*0.05,6,"center");}
+    if(k==="cover"||k==="photo"){
+      const f=fit(x,(k==="cover"?c.title:c.title).toUpperCase(),W-2*M,2,W*(k==="cover"?0.085:0.07),W*0.05,F.corm(500)); x.fillStyle=white;
+      const yb=lines(x,f,W/2,top+W*0.2,1.0,"center");
+      x.font=F.jost(400)(W*0.036); x.fillStyle=gold; x.textAlign="center"; x.fillText(k==="cover"?c.sub:c.eyebrow,W/2,yb+W*0.065); x.textAlign="left";
+      x.font=F.jost(600)(W*0.03); x.fillStyle=gold; spaced(x,(k==="cover"?c.eyebrow:c.brand||c.eyebrow).toUpperCase(),W/2,H-H*0.07,4,"center");
+      if(k==="cover"){x.font=F.jost(400)(W*0.026); x.fillStyle=white; spaced(x,`|  ${c.price}  |`,W/2,H-H*0.07+W*0.045,3,"center");}
+    } else if(k==="facts"){
+      const f=fit(x,c.factsLabel.toUpperCase(),W-2*M,1,W*0.07,W*0.05,F.corm(500)); x.fillStyle=white; lines(x,f,W/2,top+W*0.22,1,"center");
+      x.font=F.jost(400)(W*0.032); x.fillStyle=gold; x.textAlign="center"; x.fillText(c.title,W/2,top+W*0.29); x.textAlign="left";
+      const py=top+W*0.36, ph=H-py-H*0.12;
+      x.fillStyle="rgba(255,255,255,0.14)"; rrect(x,M,py,W-2*M,ph,W*0.03); x.fill(); x.strokeStyle="rgba(255,255,255,0.45)"; x.lineWidth=2; x.stroke();
+      const rows=Math.max(1,Math.ceil(Math.min(c.facts.length,6)/2));
+      if(c.facts.length) factGrid(x,c,M,py+W*0.03,W-2*M,2,Math.min(W*0.2,(ph-W*0.06)/rows),F.corm(600)(W*0.1),F.jost(400)(W*0.028),white,"center");
+      x.font=F.jost(600)(W*0.034); x.fillStyle=gold; x.textAlign="center"; x.fillText(c.price,W/2,H-H*0.05); x.textAlign="left";
+    } else {
+      const f=fit(x,c.visit.toUpperCase(),W-2*M,2,W*0.085,W*0.05,F.corm(500)); x.fillStyle=white; const yb=lines(x,f,W/2,top+W*0.2,1.0,"center");
+      x.font=F.jost(400)(W*0.032); x.fillStyle=gold; x.textAlign="center"; wrap(x,c.cta,W-3*M).slice(0,2).forEach((l,i)=>x.fillText(l,W/2,yb+W*0.07+i*W*0.045)); x.textAlign="left";
+      if(c.handle){ x.font=F.jost(600)(W*0.034); const tw=x.measureText(c.handle).width+W*0.08; x.strokeStyle=white; x.lineWidth=2; rrect(x,W/2-tw/2,H-H*0.12,tw,W*0.075,W*0.0375); x.stroke(); x.fillStyle=white; x.textAlign="center"; x.fillText(c.handle,W/2,H-H*0.12+W*0.05); x.textAlign="left"; }
+    }}},
+
+  sold:{name:"Revista", draw(x,W,H,k,c){
+    const M=W*0.07, white="#FFFFFF", paper="#F5F1EA", ink="#1A1A1A";
+    if(k==="facts"){
+      x.fillStyle=paper; x.fillRect(0,0,W,H);
+      coverFit(x,c.img,0,H*0.62,W,H*0.38);
+      x.font=F.jost(500)(W*0.024); x.fillStyle=ink; spaced(x,c.eyebrow.toUpperCase(),W/2,M+W*0.02,5,"center");
+      const f=fit(x,c.factsLabel,W-2*M,1,W*0.14,W*0.08,F.bod(400)); x.fillStyle=ink; lines(x,f,W/2,M+W*0.17,1,"center");
+      if(c.facts.length) factGrid(x,c,M,M+W*0.22,W-2*M,3,Math.min(W*0.16,(H*0.62-M-W*0.3)/2),F.bod(400)(W*0.075),F.jost(400)(W*0.024),ink,"center");
+      x.font=F.bod(400,"italic")(W*0.045); x.fillStyle=ink; x.textAlign="center"; x.fillText(c.price,W/2,H*0.62-W*0.04); x.textAlign="left";
+      return;
+    }
+    coverFit(x,c.img,0,0,W,H);
+    vgrad(x,0,H*0.42,"rgba(0,0,0,0.35)","rgba(0,0,0,0)",W);
+    x.fillStyle=white;
+    if(k==="cover"){
+      x.font=F.jost(500)(W*0.024); spaced(x,`${c.loc?c.loc.toUpperCase()+"  |  ":""}${c.price.toUpperCase()}`,W/2,H*0.17,3,"center");
+      const f=fit(x,c.big.toUpperCase(),W-1.2*M,1,W*0.3,W*0.12,F.bod(400)); x.fillStyle=white; const by=H*0.17+W*0.03+f.size*0.78; lines(x,f,W/2,by,1,"center");
+      x.font=F.corm(500,"italic")(W*0.05); x.textAlign="center"; x.fillText(c.title,W/2,by+W*0.1); x.textAlign="left";
+    } else if(k==="photo"){
+      vgrad(x,H,H*0.6,"rgba(0,0,0,0.6)","rgba(0,0,0,0)",W);
+      x.font=F.jost(500)(W*0.024); x.fillStyle=white; spaced(x,c.eyebrow.toUpperCase(),M,H-M-W*0.12,5);
+      const f=fit(x,c.title,W-2*M,2,W*0.075,W*0.05,F.bod(400)); x.fillStyle=white; lines(x,f,M,H-M-f.size*(f.lines.length-1)*1.05,1.05);
+    } else {
+      x.fillStyle="rgba(0,0,0,0.35)"; x.fillRect(0,0,W,H);
+      const f=fit(x,c.visit,W-2*M,2,W*0.13,W*0.08,F.bod(400)); x.fillStyle=white; const yb=lines(x,f,W/2,H*0.42,1.0,"center");
+      x.font=F.corm(500,"italic")(W*0.045); x.textAlign="center"; wrap(x,c.cta,W-3*M).slice(0,2).forEach((l,i)=>x.fillText(l,W/2,yb+W*0.09+i*W*0.055));
+      x.font=F.jost(500)(W*0.03); if(c.handle) spaced(x,c.handle.toUpperCase(),W/2,H-M,4,"center");
+      brandMark(x,c,W/2,H-M-W*0.13,"center",white,F.jost(500)(W*0.026),5,W*0.06);
+    }}},
+
+  vidrio:{name:"Vidrio", draw(x,W,H,k,c){
+    const white="#FFFFFF", vertical=H/W>1.5;
+    const sx=vertical?0:0, sw=vertical?W:W*0.51, sh=vertical?H*0.5:H;
+    // panel: la misma foto desenfocada
+    const b=blurred(c.img,W,H,22); x.drawImage(b,0,0); x.fillStyle="rgba(10,30,40,0.28)"; x.fillRect(0,0,W,H);
+    clipCover(x,c.img,sx,0,sw,sh,0,0,W,H);
+    const px=vertical?0:sw, pw=vertical?W:W-sw, py=vertical?sh:0, ph=vertical?H-sh:H, cx=px+pw/2, M=pw*0.1;
+    let y=py+ph*(vertical?0.1:0.2);
+    x.fillStyle=white;
+    if(!drawLogo(x,cx,y,pw*0.5,W*0.07,"center")&&c.brand){x.font=F.jost(700)(W*0.045); x.textAlign="center"; x.fillText(c.brand.toUpperCase(),cx,y+W*0.05); x.textAlign="left";}
+    y+=W*0.1; x.font=F.jost(400)(W*0.022); x.textAlign="center"; x.fillText((c.loc||c.eyebrow).toUpperCase(),cx,y); x.textAlign="left";
+    // titular: palabras finas + última en negrita
+    const ttl=k==="cta"?c.visit:k==="facts"?c.factsLabel:c.title, words=ttl.split(" "), last=words.pop(), first=words.join(" ");
+    y+=W*0.1;
+    let size=W*0.042; const fitW=()=>{x.font=F.jost(300)(size);const a=x.measureText(first+" ").width;x.font=F.jost(600)(size);return a+x.measureText(last).width;};
+    while(fitW()>pw-2*M&&size>W*0.022) size-=2;
+    x.font=F.jost(300)(size); const aw=first?x.measureText(first+" ").width:0; x.font=F.jost(600)(size); const tw=aw+x.measureText(last).width;
+    x.font=F.jost(300)(size); x.fillText(first?first+" ":"",cx-tw/2,y); x.font=F.jost(600)(size); x.fillText(last,cx-tw/2+aw,y);
+    y+=W*0.045; x.fillStyle=white; x.fillRect(cx-pw*0.15,y,pw*0.3,2);
+    const items = k==="facts"? c.facts.map(f=>f[0]+" "+f[1]) : k==="cta"? [c.cta] : k==="photo"? [c.eyebrow] : c.hl.length?c.hl:c.facts.map(f=>f[0]+" "+f[1]);
+    y+=W*0.075; x.font=F.jost(400)(W*0.022);
+    const step=Math.min(W*0.07,(py+ph-y-W*0.16)/Math.max(1,Math.min(items.length,5)));
+    items.slice(0,5).forEach((it,i)=>{
+      const t=it.toUpperCase(); const lines2=wrap(x,t,pw-2.4*M).slice(0,2);
+      if(i===0&&k!=="cta"){ x.font=F.jost(600)(W*0.024); const w=Math.min(pw-1.4*M,Math.max(...lines2.map(l=>x.measureText(l).width))+W*0.08); x.strokeStyle="#BDE6F0"; x.lineWidth=3; rrect(x,cx-w/2,y-W*0.042,w,W*0.06*lines2.length,W*0.03); x.stroke(); }
+      else x.font=F.jost(400)(W*0.022);
+      x.fillStyle=white; x.textAlign="center"; lines2.forEach((l,j)=>x.fillText(l,cx,y+j*W*0.035)); x.textAlign="left"; y+=step+(lines2.length-1)*W*0.035;
+    });
+    const by=py+ph-(vertical?H*0.08:H*0.12); x.fillRect(cx-pw*0.15,by-W*0.06,pw*0.3,2);
+    const btn=k==="cta"&&c.handle?c.handle:c.price; x.font=F.jost(500)(W*0.026); const bw=Math.min(pw-M,x.measureText(btn).width+W*0.1);
+    x.strokeStyle=white; x.lineWidth=2; rrect(x,cx-bw/2,by,bw,W*0.065,W*0.0325); x.stroke(); x.fillStyle=white; x.textAlign="center"; x.fillText(btn,cx,by+W*0.043); x.textAlign="left";
+  }},
+
+  ventana:{name:"Ventana", draw(x,W,H,k,c){
+    x.drawImage(blurred(c.img,W,H,30),0,0); x.fillStyle="rgba(255,255,255,0.12)"; x.fillRect(0,0,W,H);
+    const fw=W*0.32, fh=H*(H/W>1.5?0.6:0.66), fx=W*0.58, fy=H*0.1;
+    clipCover(x,c.img,fx,fy,fw,fh,0,0,W,H);
+    x.strokeStyle="rgba(255,255,255,0.95)"; x.lineWidth=3; x.strokeRect(fx,fy,fw,fh);
+    const white="#FFFFFF", M=W*0.08, ty=fy+fh*0.62;
+    x.shadowColor="rgba(0,0,0,0.35)"; x.shadowBlur=12;
+    const colW=(fx-M*1.6)/2;
+    const a = k==="cta"? c.visit+"." : k==="facts"? c.factsLabel+"." : k==="photo"? c.eyebrow : c.title;
+    const b = k==="cta"? c.cta : k==="facts"? c.facts.slice(0,4).map(f=>f[0]+" "+f[1]).join(" · ")||c.price : k==="photo"? c.title : (c.sub||c.price);
+    x.fillStyle=white;
+    const fa=fit(x,a,k==="facts"||k==="cta"?fx-M*1.5:colW,4,W*0.042,W*0.026,F.corm(500,"italic")); lines(x,fa,M,ty,1.2);
+    if(k==="facts"||k==="cta"){ const fb=fit(x,b,fx-M*1.5,5,W*0.03,W*0.022,F.corm(500,"italic")); lines(x,fb,M,ty+fa.lines.length*fa.size*1.2+W*0.04,1.25); }
+    else { const fb=fit(x,b,colW,4,W*0.042,W*0.026,F.corm(500,"italic")); lines(x,fb,M+colW+M*0.6,ty,1.2); }
+    x.shadowBlur=0;
+    const by=H-H*0.1;
+    if(!drawLogo(x,W/2,by-W*0.06,W*0.4,W*0.08,"center")){ x.fillStyle=white; x.font=F.corm(500)(W*0.05); spaced(x,(c.brand||c.loc||"").toUpperCase(),W/2,by,6,"center"); }
+    x.font=F.corm(500)(W*0.022); x.fillStyle=white; spaced(x,(k==="cta"&&c.handle?c.handle:c.loc||"").toUpperCase(),W/2,by+W*0.045,4,"center");
+  }},
+
+  arco:{name:"Arco", draw(x,W,H,k,c){
+    coverFit(x,c.img,0,0,W,H);
+    const navy="#1F2A44", card="#F7F3EC", cw=W*0.46, ch=H*(H/W>1.5?0.66:0.78), cx=(W-cw)/2, cy=(H-ch)/2, mid=W/2, pad=cw*0.1;
+    x.shadowColor="rgba(0,0,0,0.25)"; x.shadowBlur=30; x.fillStyle=card; x.fillRect(cx,cy,cw,ch); x.shadowBlur=0;
+    let y=cy+ch*0.06;
+    if(!drawLogo(x,mid,y,cw*0.5,W*0.06,"center")){ x.fillStyle=navy; const fb=fit(x,(c.brand||"").toUpperCase(),cw-2*pad,2,W*0.04,W*0.026,F.bod(500)); lines(x,fb,mid,y+fb.size,1.05,"center"); }
+    y+=W*0.1;
+    x.fillStyle=navy; x.font=F.jost(400)(W*0.015);
+    const small = k==="facts"? c.facts.slice(0,6).map(f=>f[0]+" "+f[1]).join(" · ") : k==="cta"? c.cta : `${c.eyebrow}${c.price?" · "+c.price:""}`;
+    wrap(x,small.toUpperCase(),cw-2*pad).slice(0,4).forEach((l,i)=>{x.textAlign="center";x.fillText(l,mid,y+i*W*0.022);}); x.textAlign="left";
+    y+=W*0.022*Math.min(4,wrap(x,small.toUpperCase(),cw-2*pad).length)+W*0.05;
+    const head = k==="cta"? c.visit : k==="facts"? c.factsLabel : c.title;
+    const f=fit(x,head.toUpperCase(),cw-2*pad,3,W*0.05,W*0.03,F.bod(500)); x.fillStyle=navy; const yb=lines(x,f,mid,y+f.size*0.8,1.05,"center");
+    const ay=yb+W*0.05, ah=cy+ch-pad*0.7-ay, aw=Math.min(cw-2*pad*0.7, ah*0.78);
+    if(ah>W*0.12){ x.save(); arch(x,mid-aw/2,ay,aw,ah); x.clip(); coverFit(x,c.img2||c.img,mid-aw/2,ay,aw,ah); x.restore(); }
+    if(k==="cta"&&c.handle){ x.font=F.jost(500)(W*0.022); x.fillStyle="#FFFFFF"; x.shadowColor="rgba(0,0,0,0.5)"; x.shadowBlur=10; spaced(x,c.handle.toUpperCase(),mid,H-H*0.04,4,"center"); x.shadowBlur=0; }
+  }}
+};
+
+/* ---------- contenido de cada pieza ---------- */
 function opLabel(d,t){return [t[d.op],d.loc].filter(Boolean).join(" · ");}
 function photo(i){const p=S.photos[i];return p?p.img:null;}
+function content(d,t){
+  const fs=facts(d,t);
+  const factLines=fs.map(f=>`${f[0]} ${f[1]}`);
+  // texto para las fotos: puntos fuertes, después datos reales, después la ubicación
+  const photoText=[...d.hl, ...factLines, d.loc, d.type].filter(Boolean);
+  const big = d.lang==="es"? (d.op==="venta"?"En venta":"Alquiler") : (d.op==="venta"?"For sale":"For rent");
+  return {title:d.title||d.type||(d.lang==="es"?"Tu propiedad":"Your property"), sub:d.loc, loc:d.loc, eyebrow:opLabel(d,t), facts:fs, hl:d.hl,
+    price:d.price||t.ask, cta:d.cta||t.cta, visit:t.visit, handle:d.handle, brand:d.brand, factsLabel:t.facts, accent:d.accent, big, photoText};
+}
+function piece(style,W,H,k,base,extra){const c=canvas(W,H),x=c.getContext("2d"); STYLES[style].draw(x,W,H,k,{...base,...extra}); return c;}
 
 function render(){
-  const d=data(), t=T[d.lang], st={...STYLES[S.style],accent:d.accent};
-  const titleTxt=d.title||(d.type?d.type:(d.lang==="es"?"Tu propiedad":"Your property"));
-  const ctaTxt=d.cta||t.cta;
-  const fs=facts(d,t);
+  const d=data(), t=T[d.lang], base=content(d,t), st=S.style;
   const feed=[], stories=[], reel=[];
-  const W=1080,H=1350,M=80;
-
-  // 1. Portada
-  {const c=canvas(W,H),x=c.getContext("2d"); const band=400;
-   coverFit(x,photo(0),0,0,W,H-band);
-   x.fillStyle=st.bg; x.fillRect(0,H-band,W,band);
-   x.fillStyle=st.accent; x.fillRect(M,H-band+64,64,6);
-   label(x,opLabel(d,t),M,H-band+120,st.muted,24,5);
-   const f=fitTitle(x,titleTxt,W-2*M,2,92,56); x.fillStyle=st.ink;
-   f.lines.forEach((l,i)=>x.fillText(l,M,H-band+120+f.size*1.05*(i+1)));
-   label(x,t.swipe,M,H-48,st.muted,20,3);
-   brandMark(x,st,W-M,H-100,"right",st.ink);
-   feed.push({c,name:"carrusel-01-portada"});}
-
-  // 2. Fotos con un punto fuerte cada una
-  const extra=Math.min(Math.max(S.photos.length-1,0),4) || (S.photos.length?0:2);
+  const W=1080,H=1350, n=S.photos.length;
+  feed.push({c:piece(st,W,H,"cover",base,{img:photo(0),img2:photo(1)}),name:"carrusel-01-portada"});
+  const extra=Math.min(Math.max(n-1,0),4) || (n?0:2);
   for(let i=0;i<extra;i++){
-    const c=canvas(W,H),x=c.getContext("2d"); const band=230; const hl=d.hl[i]||"";
-    x.fillStyle=st.bg; x.fillRect(0,0,W,H);
-    coverFit(x,photo(i+1),0,0,W,hl?H-band:H);
-    if(hl){ const f=fitTitle(x,hl,W-2*M,2,54,36); x.fillStyle=st.ink;
-      const y0=H-band+ (band-(f.lines.length*f.size*1.1))/2 + f.size*0.85;
-      f.lines.forEach((l,j)=>x.fillText(l,M,y0+j*f.size*1.1));
-      x.fillStyle=st.accent; x.fillRect(W-M-6,H-band+60,6,band-120);}
-    feed.push({c,name:`carrusel-0${feed.length+1}-foto`});
+    const txt=base.photoText[i]||base.title;
+    feed.push({c:piece(st,W,H,"photo",base,{img:photo(i+1),img2:photo(i+2)||photo(0),title:txt,eyebrow:base.eyebrow}),name:`carrusel-0${feed.length+1}-foto`});
   }
-
-  // 3. Datos clave (placa de texto)
-  {const c=canvas(W,H),x=c.getContext("2d");
-   x.fillStyle=st.alt; x.fillRect(0,0,W,H);
-   label(x,t.facts,M,M+40,st.accent==st.alt?st.altInk:st.accent,26,6);
-   const f=fitTitle(x,titleTxt,W-2*M,2,64,44); x.fillStyle=st.altInk;
-   f.lines.forEach((l,i)=>x.fillText(l,M,M+80+f.size*1.05*(i+1)));
-   const top=M+120+f.lines.length*f.size*1.05+40, colW=(W-2*M)/2, rowH=190;
-   x.strokeStyle=st.altInk; x.globalAlpha=.25; x.lineWidth=2; x.beginPath(); x.moveTo(M,top); x.lineTo(W-M,top); x.stroke(); x.globalAlpha=1;
-   fs.slice(0,6).forEach((fa,i)=>{const cx=M+(i%2)*colW, cy=top+40+Math.floor(i/2)*rowH;
-     x.fillStyle=st.altInk; x.font="800 96px Montserrat, sans-serif"; x.fillText(fa[0],cx,cy+90);
-     x.font="500 28px Montserrat, sans-serif"; x.globalAlpha=.7; x.fillText(fa[1],cx,cy+136); x.globalAlpha=1;});
-   if(!fs.length){x.font="500 32px Manrope, sans-serif";x.fillStyle=st.altInk;x.fillText("Completá m², ambientes y baños en la ficha.",M,top+90);}
-   x.fillStyle=st.altInk; x.font="800 44px Montserrat, sans-serif"; x.fillText(d.price||t.ask,M,H-M-10);
-   feed.push({c,name:`carrusel-0${feed.length+1}-datos`});}
-
-  // 4. Cierre con CTA
-  {const c=canvas(W,H),x=c.getContext("2d");
-   x.fillStyle=st.accent; x.fillRect(0,0,W,H);
-   const tone="#FFFFFF";
-   label(x,d.loc||"",M,M+40,tone,24,5);
-   const f=fitTitle(x,t.visit+".",W-2*M,3,120,72); x.fillStyle=tone;
-   const y0=H/2-(f.lines.length*f.size*1.05)/2+f.size*0.6;
-   f.lines.forEach((l,i)=>x.fillText(l,M,y0+i*f.size*1.05));
-   x.font="500 36px Manrope, sans-serif"; const cl=wrap(x,ctaTxt,W-2*M); cl.slice(0,3).forEach((l,i)=>x.fillText(l,M,y0+f.lines.length*f.size*1.05+40+i*50));
-   if(d.handle){x.font="800 40px Montserrat, sans-serif"; x.fillText(d.handle,M,H-M-60);}
-   if(d.credit){x.font="500 22px Manrope, sans-serif"; x.globalAlpha=.8; x.fillText(d.credit,M,H-M-10); x.globalAlpha=1;}
-   brandMark(x,st,W-M,H-M-110,"right",tone);
-   feed.push({c,name:`carrusel-0${feed.length+1}-contacto`});}
-
-  // Historias 1080x1920 (250 px libres arriba y abajo)
-  const SW=1080,SH=1920,SAFE=250;
-  {const c=canvas(SW,SH),x=c.getContext("2d");
-   coverFit(x,photo(0),0,0,SW,SH);
-   const bh=520, by=SH-SAFE-bh-40; x.fillStyle=st.bg; x.fillRect(M-20,by,SW-2*(M-20),bh);
-   label(x,opLabel(d,t),M+30,by+80,st.muted,24,5);
-   const f=fitTitle(x,titleTxt,SW-2*M-60,3,88,56); x.fillStyle=st.ink;
-   f.lines.forEach((l,i)=>x.fillText(l,M+30,by+90+f.size*1.05*(i+1)));
-   x.fillStyle=st.accent; x.fillRect(M+30,by+bh-70,64,6);
-   stories.push({c,name:"historia-01"});}
-  {const c=canvas(SW,SH),x=c.getContext("2d");
-   x.fillStyle=st.alt; x.fillRect(0,0,SW,SH);
-   coverFit(x,photo(1)||photo(0),0,0,SW,SH*0.5);
-   label(x,t.facts,M,SH*0.5+110,st.accent==st.alt?st.altInk:st.accent,26,6);
-   fs.slice(0,6).forEach((fa,i)=>{const cx=M+(i%2)*((SW-2*M)/2), cy=SH*0.5+150+Math.floor(i/2)*160;
-     x.fillStyle=st.altInk; x.font="800 80px Montserrat, sans-serif"; x.fillText(fa[0],cx,cy+80);
-     x.font="500 26px Montserrat, sans-serif"; x.globalAlpha=.7; x.fillText(fa[1],cx,cy+120); x.globalAlpha=1;});
-   x.fillStyle=st.altInk; x.font="800 44px Montserrat, sans-serif"; x.fillText(d.price||t.ask,M,SH-SAFE-30);
-   stories.push({c,name:"historia-02"});}
-  {const c=canvas(SW,SH),x=c.getContext("2d");
-   x.fillStyle=st.accent; x.fillRect(0,0,SW,SH);
-   coverFit(x,photo(2)||photo(0),M,SAFE+40,SW-2*M,(SW-2*M)*1.0);
-   const tone="#FFFFFF"; const y=SAFE+40+(SW-2*M)+120;
-   const f=fitTitle(x,t.visit+".",SW-2*M,2,96,64); x.fillStyle=tone;
-   f.lines.forEach((l,i)=>x.fillText(l,M,y+i*f.size*1.05));
-   x.font="500 34px Manrope, sans-serif"; wrap(x,ctaTxt,SW-2*M).slice(0,2).forEach((l,i)=>x.fillText(l,M,y+f.lines.length*f.size*1.05+30+i*46));
-   if(d.handle){x.font="800 40px Montserrat, sans-serif"; x.fillText(d.handle,M,SH-SAFE-20);}
-   brandMark(x,st,SW-M,SH-SAFE-70,"right",tone);
-   stories.push({c,name:"historia-03"});}
-
-  // Portada de reel: título dentro del cuadrado central (lo que se ve en la grilla)
-  {const c=canvas(SW,SH),x=c.getContext("2d");
-   coverFit(x,photo(0),0,0,SW,SH);
-   const sq=(SH-SW)/2; const bh=300, by=sq+SW/2-bh/2+160;
-   x.fillStyle=st.bg; x.globalAlpha=.92; x.fillRect(0,by,SW,bh); x.globalAlpha=1;
-   x.textAlign="center"; label(x,"",0,0,st.muted);
-   x.font="600 24px Montserrat, sans-serif"; x.fillStyle=st.muted;
-   if("letterSpacing" in x) x.letterSpacing="5px"; x.fillText(opLabel(d,t).toUpperCase(),SW/2,by+70); if("letterSpacing" in x) x.letterSpacing="0px";
-   const f=fitTitle(x,titleTxt,SW-2*M,2,76,48); x.fillStyle=st.ink;
-   const y0=by+70+(bh-70-f.lines.length*f.size*1.05)/2+f.size*0.85;
-   f.lines.forEach((l,i)=>x.fillText(l,SW/2,y0+i*f.size*1.05)); x.textAlign="left";
-   reel.push({c,name:"portada-reel"});}
-
+  feed.push({c:piece(st,W,H,"facts",base,{img:photo(Math.min(n-1,5))||photo(0),img2:photo(1)||photo(0)}),name:`carrusel-0${feed.length+1}-datos`});
+  feed.push({c:piece(st,W,H,"cta",base,{img:photo(n>2?2:0),img2:photo(0)}),name:`carrusel-0${feed.length+1}-contacto`});
+  const SW=1080,SH=1920;
+  stories.push({c:piece(st,SW,SH,"cover",base,{img:photo(0),img2:photo(1)}),name:"historia-01"});
+  stories.push({c:piece(st,SW,SH,"facts",base,{img:photo(1)||photo(0),img2:photo(2)||photo(0)}),name:"historia-02"});
+  stories.push({c:piece(st,SW,SH,"cta",base,{img:photo(2)||photo(0),img2:photo(0)}),name:"historia-03"});
+  reel.push({c:piece(st,SW,SH,"cover",base,{img:photo(0),img2:photo(1)}),name:"portada-reel"});
   out.feed=feed; out.stories=stories; out.reel=reel;
   show("tab-feed",feed); show("tab-stories",stories); show("tab-reel",reel);
-  captions(d); missing(d);
+  captions(d); missing(d); previews(base);
+}
+
+/* ---------- selector de estilos con vista previa ---------- */
+const stylesEl = $("styles");
+Object.entries(STYLES).forEach(([k,v])=>{
+  const b=document.createElement("button"); b.type="button"; b.className="style-opt"; b.dataset.k=k;
+  b.innerHTML=`<img alt="Vista previa del estilo ${v.name}"><b>${v.name}</b>`;
+  b.onclick=()=>{S.style=k; markStyle(); schedule();};
+  stylesEl.appendChild(b);
+});
+function markStyle(){stylesEl.querySelectorAll(".style-opt").forEach(b=>b.setAttribute("aria-pressed", b.dataset.k===S.style)); $("accentWrap").hidden=S.style!=="oscuro";}
+markStyle();
+function previews(base){
+  stylesEl.querySelectorAll(".style-opt").forEach(b=>{
+    const big=piece(b.dataset.k,1080,1350,"cover",base,{img:photo(0),img2:photo(1)});
+    const sm=canvas(270,338); const sx=sm.getContext("2d"); sx.imageSmoothingQuality="high"; sx.drawImage(big,0,0,270,338);
+    b.querySelector("img").src=sm.toDataURL("image/jpeg",0.8);
+  });
 }
 
 function show(id,list){
@@ -492,7 +604,7 @@ function show(id,list){
     const img=new Image(); img.src=it.c.toDataURL("image/jpeg",0.82); img.alt=it.name.replace(/-/g," ");
     fig.appendChild(img);
     const cap=document.createElement("figcaption"); cap.innerHTML=`<span>${String(i+1).padStart(2,"0")} · ${it.c.width}×${it.c.height}</span>`;
-    const b=document.createElement("button"); b.textContent="PNG"; b.onclick=()=>savePNG(it);
+    const b=document.createElement("button"); b.textContent="Guardar"; b.onclick=()=>savePNG(it);
     cap.appendChild(b); fig.appendChild(cap); box.appendChild(fig);
   });
 }
@@ -530,20 +642,23 @@ function missing(d){
   box.innerHTML=m.length?`<b>[a completar]</b> Lo que falta no aparece en el diseño:<ul>${m.map(x=>`<li>${x}</li>`).join("")}</ul>`:"";
 }
 
-/* ---------- descargas ---------- */
-const blobOf=c=>new Promise(r=>c.toBlob(r,"image/png"));
+/* ---------- descargas: galería en el celu, JPG en la compu ---------- */
+const jpgOf=c=>new Promise(r=>c.toBlob(r,"image/jpeg",0.92));
 function msg(t,ok){const s=$("saveStatus"); s.textContent=t; s.className="status"+(ok?" ok":"");}
-async function save(filename,blob){
-  const u=URL.createObjectURL(blob), a=document.createElement("a"); a.href=u; a.download=filename;
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); msg("Descargando "+filename,true);
+const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));
+async function saveFiles(items){
+  const d=data(), base=slug(d.title||d.loc);
+  const files=await Promise.all(items.map(async it=>new File([await jpgOf(it.c)],`${base}-${it.name}.jpg`,{type:"image/jpeg"})));
+  if(mobile&&navigator.canShare&&navigator.canShare({files})){
+    try{ await navigator.share({files}); msg("Elegí “Guardar imágenes” para que vayan a la galería.",true); return; }
+    catch(e){ if(e&&e.name==="AbortError"){ msg("Cancelado."); return; } }
+  }
+  for(const f of files){ const u=URL.createObjectURL(f), a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),5000); await new Promise(r=>setTimeout(r,350)); }
+  msg(files.length>1?`Descargando ${files.length} imágenes JPG.`:"Descargando "+files[0].name,true);
 }
-async function savePNG(it){ const d=data(); await save(`${slug(d.title||d.loc)}-${it.name}.png`, await blobOf(it.c)); }
-$("btnZip").onclick=async()=>{
-  const d=data(), base=slug(d.title||d.loc); const zip=new JSZip();
-  for(const it of [...out.feed,...out.stories,...out.reel]) zip.file(`${it.name}.png`, await blobOf(it.c));
-  zip.file("textos.md",`# ${d.title||"Propiedad"}\n\nFuente: ${d.src||"[a completar]"}\n\n## Caption ES\n\n${$("capES").textContent}\n\n## Caption EN\n\n${$("capEN").textContent}\n\n## Texto alternativo\n\n${$("altTxt").textContent}\n`);
-  await save(`${base}-redes.zip`, await zip.generateAsync({type:"blob"}));
-};
+async function savePNG(it){ await saveFiles([it]); }
+$("btnZip").onclick=()=>saveFiles([...out.feed,...out.stories,...out.reel]);
+$("btnZip").textContent = mobile? "Guardar todo en la galería" : "Descargar todo (JPG)";
 
 /* ---------- pestañas y copiar ---------- */
 document.querySelectorAll("[role=tab]").forEach(b=>b.onclick=()=>{
@@ -559,7 +674,7 @@ document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>{
 let timer=null;
 function schedule(){clearTimeout(timer);timer=setTimeout(render,250);}
 document.querySelectorAll("input[type=text],input[type=url],textarea,select,input[type=color]").forEach(el=>el.addEventListener("input",()=>{ if(el.id!=="raw"&&el.id!=="src") schedule(); }));
-Promise.all([document.fonts.load('800 80px Montserrat'),document.fonts.load('600 24px Montserrat'),document.fonts.load('500 28px Montserrat'),document.fonts.load('500 34px Manrope')]).catch(()=>{}).finally(render);
+Promise.all(['800 80px Montserrat','700 24px Montserrat','600 24px Montserrat','500 28px Montserrat','500 34px Manrope','500 40px "Cormorant Garamond"','italic 500 40px "Cormorant Garamond"','600 40px "Cormorant Garamond"','400 40px "Bodoni Moda"','500 40px "Bodoni Moda"','italic 400 40px "Bodoni Moda"','300 30px Jost','400 30px Jost','500 30px Jost','600 30px Jost','700 30px Jost'].map(f=>document.fonts.load(f))).catch(()=>{}).finally(render);
 })();
 </script>
 
