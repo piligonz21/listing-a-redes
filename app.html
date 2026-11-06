@@ -50,6 +50,15 @@ button:disabled{opacity:.5;cursor:default}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb .tag{position:absolute;left:4px;top:4px;background:var(--accent);color:var(--accent-ink);font-size:10px;font-weight:700;padding:1px 6px;}
 .thumb .lowres{position:absolute;left:0;right:0;bottom:24px;background:#B42318;color:#fff;font-size:9px;font-weight:700;text-align:center;padding:1px 2px}
+.pexels{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.pexels summary{cursor:pointer;font-weight:500}
+.chips{margin-top:8px}.chips button{padding:5px 10px;font-size:13px}
+.pxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-top:10px}
+.pxgrid button{padding:0;border:2px solid transparent;position:relative;aspect-ratio:3/4;overflow:hidden;background:var(--line)}
+.pxgrid button img{width:100%;height:100%;object-fit:cover;display:block}
+.pxgrid button.added{border-color:var(--accent)}.pxgrid button.added::after{content:"✓";position:absolute;right:4px;top:2px;color:#fff;font-weight:700;text-shadow:0 0 4px #000}
+.pxcredit{font-size:12px;color:var(--muted);margin:8px 0 0}
+.thumb .stock{position:absolute;left:0;right:0;bottom:24px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;text-align:center;padding:1px 2px}
 .thumb .x{position:absolute;right:3px;top:3px;padding:0 6px;font-size:12px;line-height:18px;background:rgba(0,0,0,.6);color:#fff;border:0}
 .thumb .mv{position:absolute;bottom:3px;left:3px;right:3px;display:flex;justify-content:space-between}
 .thumb .mv button{padding:0 6px;font-size:12px;line-height:18px;background:rgba(0,0,0,.6);color:#fff;border:0}
@@ -143,6 +152,15 @@ figcaption button{padding:4px 9px;font-size:12px}
         <div id="drop" class="drop" tabindex="0" role="button" aria-label="Subir fotos">Tocá para elegir fotos o arrastralas acá<br><small>La primera es la portada. Usá ‹ › para ordenarlas.</small></div>
         <input id="photoInput" type="file" accept="image/*" multiple hidden>
         <div id="thumbs" class="thumbs"></div>
+        <details id="pexels" class="pexels">
+          <summary>¿Te faltan fotos? Buscá fotos de stock gratis (Pexels)</summary>
+          <div class="row" style="flex-wrap:nowrap;margin-top:10px"><input id="pxQ" type="search" placeholder="Ej: living moderno, pileta, cocina"><button id="pxGo" class="primary">Buscar</button></div>
+          <div class="row chips" id="pxChips"></div>
+          <p class="status" id="pxStatus">Son fotos ilustrativas, no de la propiedad: en la placa se marca “Imagen ilustrativa”.</p>
+          <div id="pxGrid" class="pxgrid"></div>
+          <button id="pxMore" hidden>Ver más</button>
+          <p class="pxcredit">Fotos de <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a></p>
+        </details>
       </section>
 
       <section class="panel">
@@ -320,7 +338,7 @@ function renderThumbs(){
   const box=$("thumbs"); box.innerHTML="";
   S.photos.forEach((p,i)=>{
     const d=document.createElement("div"); d.className="thumb"+(i===0?" cover":"");
-    d.innerHTML=`<img src="${p.url}" alt="Foto ${i+1}">${i===0?'<span class="tag">Portada</span>':""}${Math.max(p.img.naturalWidth,p.img.naturalHeight)<1000?'<span class="lowres" title="Esta foto viene chica del aviso. Para mejor calidad subí la original.">Baja resolución</span>':""}<button class="x" aria-label="Quitar foto ${i+1}">×</button><div class="mv"><button aria-label="Mover antes">‹</button><button aria-label="Mover después">›</button></div>`;
+    d.innerHTML=`<img src="${p.url}" alt="Foto ${i+1}">${i===0?'<span class="tag">Portada</span>':""}${p.img._stock?'<span class="stock">Pexels</span>':""}${!p.img._stock&&Math.max(p.img.naturalWidth,p.img.naturalHeight)<1000?'<span class="lowres" title="Esta foto viene chica del aviso. Para mejor calidad subí la original.">Baja resolución</span>':""}<button class="x" aria-label="Quitar foto ${i+1}">×</button><div class="mv"><button aria-label="Mover antes">‹</button><button aria-label="Mover después">›</button></div>`;
     d.querySelector(".x").onclick=()=>{S.photos.splice(i,1);renderThumbs();schedule();};
     const [l,r]=d.querySelectorAll(".mv button");
     l.onclick=()=>{ if(i>0){[S.photos[i-1],S.photos[i]]=[S.photos[i],S.photos[i-1]];renderThumbs();schedule();} };
@@ -328,6 +346,34 @@ function renderThumbs(){
     box.appendChild(d);
   });
 }
+/* ---------- fotos de stock (Pexels) ---------- */
+const PX_CHIPS=["fachada casa moderna","living moderno","cocina moderna","dormitorio","baño moderno","pileta","jardín","departamento","vista ciudad","oficina"];
+let pxPage=1, pxLast="";
+PX_CHIPS.forEach(t=>{const b=document.createElement("button"); b.type="button"; b.textContent=t; b.onclick=()=>{$("pxQ").value=t; pxSearch(true);}; $("pxChips").appendChild(b);});
+async function pxSearch(fresh){
+  const q=$("pxQ").value.trim(), st=$("pxStatus"); if(!q){ st.textContent="Escribí qué foto buscás."; return; }
+  if(fresh){ pxPage=1; $("pxGrid").innerHTML=""; } pxLast=q;
+  st.className="status"; st.textContent="Buscando…"; $("pxGo").disabled=true;
+  try{
+    const r=await fetch(`/api/pexels?q=${encodeURIComponent(q)}&page=${pxPage}`); if(r.status===401){ location.href="/"; return; }
+    const d=await r.json(); if(d.error){ st.textContent=d.error; return; }
+    if(!d.photos.length&&fresh){ st.textContent="No encontré fotos. Probá con otras palabras."; return; }
+    d.photos.forEach(ph=>{
+      const b=document.createElement("button"); b.type="button"; b.title=`${ph.alt||"Foto"} · ${ph.by} (Pexels)`;
+      b.innerHTML=`<img src="${ph.thumb}" alt="${(ph.alt||"Foto de stock").replace(/"/g,"")}" loading="lazy">`;
+      b.onclick=async()=>{ if(b.classList.contains("added")) return; st.textContent="Agregando foto…";
+        try{ const p=await loadRemote(ph.full); p.img._stock=true; p.credit=ph.by; S.photos.push(p); b.classList.add("added"); renderThumbs(); schedule(); st.className="status ok"; st.textContent=`Agregada (foto de ${ph.by}). Tocá otra para sumar más.`; }
+        catch(e){ st.textContent="No pude bajar esa foto. Probá con otra."; } };
+      $("pxGrid").appendChild(b);
+    });
+    $("pxMore").hidden=!d.more; st.className="status"; st.textContent="Tocá las fotos que quieras sumar. Son ilustrativas: en la placa se marca “Imagen ilustrativa”.";
+  }catch(e){ st.textContent="No pude buscar en Pexels. Probá de nuevo."; }
+  finally{ $("pxGo").disabled=false; }
+}
+$("pxGo").onclick=()=>pxSearch(true);
+$("pxQ").onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); pxSearch(true); } };
+$("pxMore").onclick=()=>{ pxPage++; $("pxQ").value=pxLast; pxSearch(false); };
+
 $("logoInput").onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ S.logo=(await loadImg(f)).img; $("logoClear").hidden=false; schedule(); }catch(err){} };
 $("logoClear").onclick=()=>{S.logo=null;$("logoInput").value="";$("logoClear").hidden=true;schedule();};
 
@@ -627,7 +673,14 @@ function piece(style,W,H,k,base,extra){
   if(k!=="cover") o.eyebrow="";   // operación y zona solo en la portada
   STYLES[style].draw(x,W,H,k,o);
   if(k!=="cta") signature(x,W,H,style,k,base);
+  if([o.img,o.img2].some(im=>im&&im._stock)) stockTag(x,W,H);
   return c;
+}
+// Aviso chico en las placas con fotos de stock
+function stockTag(x,W,H){
+  const t=$("f_lang").value==="en"?"Illustrative image":"Imagen ilustrativa";
+  x.save(); x.font=F.jost(500)(W*0.017); x.textAlign="right"; x.fillStyle="rgba(255,255,255,0.9)"; x.shadowColor="rgba(0,0,0,0.6)"; x.shadowBlur=W*0.008;
+  x.fillText(t,W-W*0.03,H-W*0.025); x.restore();
 }
 // Firma chica arriba de cada placa: nombre + @ o WhatsApp
 function signature(x,W,H,style,k,b){
@@ -752,7 +805,7 @@ const REEL_THEME = {
 const ease=t=>1-Math.pow(1-Math.min(Math.max(t,0),1),3);
 function kenBurns(x,img,W,H,p,dir){
   const z=1.04+0.10*p, dx=(dir%2?1:-1)*W*0.03*p, dy=(dir%3===0?-1:1)*H*0.015*p;
-  x.save(); x.translate(W/2+dx,H/2+dy); x.scale(z,z); x.translate(-W/2,-H/2); coverFit(x,img,0,0,W,H); x.restore();
+  x.save(); x.translate(W/2+dx,H/2+dy); x.scale(z,z); x.translate(-W/2,-H/2); coverFit(x,img,0,0,W,H); x.restore(); if(img&&img._stock) stockTag(x,W,H);
 }
 function reelText(x,th,W,H,local,dur,eyebrow,title,sub,style,c){
   const M=W*0.08, inT=ease((local-0.15)/0.6), out=1-ease((local-(dur-0.45))/0.4);
