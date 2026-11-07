@@ -98,7 +98,7 @@ figcaption button{padding:4px 9px;font-size:12px}
   <header class="top">
     <div>
       <h1>Listing a Redes</h1>
-      <p>Pegá el aviso de una propiedad, subí las fotos y bajá el carrusel 4:5, las historias y la portada del reel, con los textos en español e inglés.</p>
+      <p>Pegá el aviso de una propiedad, subí las fotos y bajá el carrusel 4:5, las historias y la portada del reel, con el caption listo para copiar.</p>
     </div>
   </header>
 
@@ -213,8 +213,6 @@ figcaption button{padding:4px 9px;font-size:12px}
           <div class="stack">
             <div class="row" style="justify-content:space-between"><h2 style="margin:0">Caption en español</h2><button data-copy="capES">Copiar</button></div>
             <div id="capES" class="copybox"></div>
-            <div class="row" style="justify-content:space-between"><h2 style="margin:0">Caption in English</h2><button data-copy="capEN">Copy</button></div>
-            <div id="capEN" class="copybox"></div>
             <div class="row" style="justify-content:space-between"><h2 style="margin:0">Texto alternativo de las fotos</h2><button data-copy="altTxt">Copiar</button></div>
             <div id="altTxt" class="copybox"></div>
           </div>
@@ -746,8 +744,8 @@ function show(id,list){
 function slug(s){return (s||"propiedad").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"propiedad";}
 function tag(s){return s?"#"+s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9]/g,""):"";}
 function captions(d){
-  const es=T.es,en=T.en;
-  const fe=facts(d,es), fn=facts(d,en);
+  const es=T.es;
+  const fe=facts(d,es);
   const place=d.loc?` en ${d.loc}`:"";
   const head=(d.title||d.type||"Propiedad")+place;
   const tags=[...new Set([d.loc&&d.loc.split(/[·,]/).map(s=>tag(s.trim())), tag(d.type), d.op==="venta"?"#EnVenta":"#EnAlquiler", d.type?tag(d.type+(d.op==="venta"?"EnVenta":"EnAlquiler")):"", "#RealEstateArgentina","#Propiedades","#Inmobiliaria"].flat().filter(Boolean))].slice(0,10).join(" ");
@@ -759,12 +757,6 @@ function captions(d){
   if(d.credit) s+=`\n${d.credit}`;
   s+=`\n\n${tags}`;
   $("capES").textContent=s;
-  let e=`${(d.title||d.type||"Property")}${d.loc?" in "+d.loc:""}.\n`;
-  if(fn.length) e+=fn.map(f=>f[0]+" "+f[1]).join(" · ")+"\n";
-  e+=`${d.price?"Price: "+d.price:en.ask}. ${en.cta}.`;
-  if(d.handle) e+=`\n${d.handle}`;
-  e+=`\n\n[Los puntos fuertes quedan en español: traducilos si el post va en inglés.]`;
-  $("capEN").textContent=e;
   $("altTxt").textContent=S.photos.length? S.photos.map((p,i)=>`Foto ${i+1}: ${i===0?"portada de ":""}${(d.type||"propiedad").toLowerCase()}${d.loc?" en "+d.loc:""}. [describí qué se ve]`).join("\n") : "Subí fotos para armar el texto alternativo.";
 }
 function missing(d){
