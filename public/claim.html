@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Your access code · Listing a Redes</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="wrap" style="max-width:560px">
+  <h1>Thanks for your purchase</h1>
+  <p class="lead">Here is your access code for Listing a Redes. Save this email: you can come back to this page any time.</p>
+  <div class="box">
+    <p class="eyebrow">Access code</p>
+    <div id="out"><p class="msg" id="msg" role="status">Getting your code…</p></div>
+  </div>
+  <p class="foot">Each code works on up to 2 devices (for example, your phone and your computer). Need help or a device reset? Reply to your order email.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const q=new URLSearchParams(location.search), o=q.get("o")||"", e=q.get("e")||"";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let tries=0;
+async function load(){
+  try{
+    const r=await fetch(`/api/claim?o=${encodeURIComponent(o)}&e=${encodeURIComponent(e)}`), j=await r.json().catch(()=>({}));
+    if(r.status===202&&tries++<20){ $("msg").textContent="Confirming your payment… this takes a few seconds."; return setTimeout(load,3000); }
+    if(r.status===202){ $("msg").className="msg bad"; $("msg").textContent="Your payment is still being confirmed. Refresh this page in a few minutes."; return; }
+    if(!r.ok){ $("msg").className="msg bad"; $("msg").textContent=j.error||"Something went wrong. Try again."; return; }
+    $("out").innerHTML=j.codes.map(c=>`<div class="newcode"><code style="font-size:22px;letter-spacing:.08em">${esc(c)}</code>
+      <div class="row" style="margin-top:12px"><a href="/?code=${encodeURIComponent(c)}"><button class="primary">Open the app</button></a><button data-c="${esc(c)}">Copy code</button></div></div>`).join("");
+    document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>navigator.clipboard.writeText(b.dataset.c).then(()=>{b.textContent="Copied";}));
+  }catch(err){ if(tries++<20) return setTimeout(load,3000); $("msg").className="msg bad"; $("msg").textContent="No connection. Refresh this page."; }
+}
+if(!o||!e){ $("msg").className="msg bad"; $("msg").textContent="This link is incomplete. Use the link from your order email."; } else load();
+</script>
+</body>
+</html>
