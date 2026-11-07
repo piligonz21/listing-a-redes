@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Listing a Redes</title>
-<meta name="description" content="Pegá el link de una propiedad y obtené el carrusel, las historias y la portada de reel para Instagram.">
+<meta name="description" content="Paste a property link and get the Instagram carousel, stories, reel cover and an animated reel.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Jost:wght@300;400;500;600;700&display=swap">
@@ -98,88 +98,90 @@ figcaption button{padding:4px 9px;font-size:12px}
   <header class="top">
     <div>
       <h1>Listing a Redes</h1>
-      <p>Pegá el aviso de una propiedad, subí las fotos y bajá el carrusel 4:5, las historias y la portada del reel, con el caption listo para copiar.</p>
+      <p>Paste a property listing, add the photos and download the 4:5 carousel, the stories, the reel cover and an animated reel, with the caption ready to copy.</p>
     </div>
   </header>
 
   <div class="grid">
     <div>
       <section class="panel">
-        <p class="step">Paso 1</p>
-        <h2>El aviso</h2>
+        <p class="step">Step 1</p>
+        <h2>The listing</h2>
         <div class="stack">
           <div>
-            <label for="src">Link del aviso</label>
-            <div class="row" style="flex-wrap:nowrap"><input id="src" type="url" placeholder="https://..."><button id="btnLink" class="primary">Leer link</button></div>
-            <p class="hint">Saca las fotos y los datos solo. Lo que no encuentre queda en blanco y te avisa.</p>
+            <label for="src">Listing link</label>
+            <div class="row" style="flex-wrap:nowrap"><input id="src" type="url" placeholder="https://..."><button id="btnLink" class="primary">Read link</button></div>
+            <p class="hint">Pulls the photos and the details for you. Anything it can't find is left blank and flagged.</p>
           </div>
           <div id="linkStatus" class="status" role="status"></div>
           <div>
-            <label for="raw">¿No se pudo leer? Pegá el texto del aviso</label>
-            <textarea id="raw" rows="6" placeholder="Copiá y pegá la descripción y los datos del aviso (precio, m², dormitorios...)"></textarea>
-            <p class="hint">Zonaprop suele bloquear la lectura automática. Probá con el aviso en la web de la inmobiliaria o pegá el texto.</p>
+            <label for="raw">Couldn't read it? Paste the listing text</label>
+            <textarea id="raw" rows="6" placeholder="Copy and paste the listing description and details (price, size, bedrooms...)"></textarea>
+            <p class="hint">Some big portals block automatic reading. Try the listing on the agency's own website, or paste the text.</p>
           </div>
           <div class="row">
-            <button id="btnParse">Leer datos del texto</button>
+            <button id="btnParse">Read details from text</button>
           </div>
           <div id="parseStatus" class="status" role="status"></div>
         </div>
       </section>
 
       <section class="panel">
-        <p class="step">Paso 2</p>
-        <h2>Ficha</h2>
+        <p class="step">Step 2</p>
+        <h2>Property details</h2>
         <div class="fields">
-          <div class="full"><label for="f_title">Titular</label><input id="f_title" type="text"></div>
-          <div><label for="f_op">Operación</label>
-            <select id="f_op"><option value="venta">Venta</option><option value="alquiler">Alquiler</option><option value="temporario">Alquiler temporario</option></select></div>
-          <div><label for="f_type">Tipo</label><input id="f_type" type="text" placeholder="Casa, depto, lote"></div>
-          <div class="full"><label for="f_loc">Barrio y ciudad</label><input id="f_loc" type="text"></div>
-          <div class="full"><label for="f_price">Precio</label><input id="f_price" type="text" placeholder="USD 450.000 o vacío = a consultar"></div>
-          <div><label for="f_m2">m² cubiertos</label><input id="f_m2" type="text"></div>
-          <div><label for="f_lot">m² terreno / totales</label><input id="f_lot" type="text"></div>
-          <div><label for="f_amb">Ambientes</label><input id="f_amb" type="text"></div>
-          <div><label for="f_dorm">Dormitorios</label><input id="f_dorm" type="text"></div>
-          <div><label for="f_bath">Baños</label><input id="f_bath" type="text"></div>
-          <div><label for="f_car">Cocheras</label><input id="f_car" type="text"></div>
-          <div class="full"><label for="f_hl">Puntos fuertes (uno por línea, hasta 4)</label><textarea id="f_hl" rows="4"></textarea></div>
+          <div class="full"><label for="f_title">Headline</label><input id="f_title" type="text"></div>
+          <div><label for="f_op">Listing type</label>
+            <select id="f_op"><option value="venta">For sale</option><option value="alquiler">For rent</option><option value="temporario">Short-term rental</option></select></div>
+          <div><label for="f_type">Property type</label><input id="f_type" type="text" placeholder="House, condo, lot"></div>
+          <div class="full"><label for="f_loc">Neighborhood and city</label><input id="f_loc" type="text"></div>
+          <div class="full"><label for="f_price">Price</label><input id="f_price" type="text" placeholder="$450,000 (leave empty = price on request)"></div>
+          <div><label for="f_unit">Area unit</label>
+            <select id="f_unit"><option value="sqft">sq ft</option><option value="m2">m²</option></select></div>
+          <div><label for="f_m2">Living area</label><input id="f_m2" type="text"></div>
+          <div><label for="f_lot">Lot size</label><input id="f_lot" type="text"></div>
+          <div><label for="f_amb">Rooms</label><input id="f_amb" type="text"></div>
+          <div><label for="f_dorm">Bedrooms</label><input id="f_dorm" type="text"></div>
+          <div><label for="f_bath">Bathrooms</label><input id="f_bath" type="text"></div>
+          <div><label for="f_car">Parking spaces</label><input id="f_car" type="text"></div>
+          <div class="full"><label for="f_hl">Highlights (one per line, up to 4)</label><textarea id="f_hl" rows="4"></textarea></div>
         </div>
       </section>
 
       <section class="panel">
-        <p class="step">Paso 3</p>
-        <h2>Fotos</h2>
-        <div id="drop" class="drop" tabindex="0" role="button" aria-label="Subir fotos">Tocá para elegir fotos o arrastralas acá<br><small>La primera es la portada. Usá ‹ › para ordenarlas.</small></div>
+        <p class="step">Step 3</p>
+        <h2>Photos</h2>
+        <div id="drop" class="drop" tabindex="0" role="button" aria-label="Upload photos">Tap to choose photos or drag them here<br><small>The first one is the cover. Use ‹ › to reorder them.</small></div>
         <input id="photoInput" type="file" accept="image/*" multiple hidden>
         <div id="thumbs" class="thumbs"></div>
         <details id="pexels" class="pexels">
-          <summary>¿Te faltan fotos? Buscá fotos de stock gratis (Pexels)</summary>
-          <div class="row" style="flex-wrap:nowrap;margin-top:10px"><input id="pxQ" type="search" placeholder="Ej: living moderno, pileta, cocina"><button id="pxGo" class="primary">Buscar</button></div>
+          <summary>Missing photos? Search free stock photos (Pexels)</summary>
+          <div class="row" style="flex-wrap:nowrap;margin-top:10px"><input id="pxQ" type="search" placeholder="e.g. modern living room, pool, kitchen"><button id="pxGo" class="primary">Search</button></div>
           <div class="row chips" id="pxChips"></div>
-          <p class="status" id="pxStatus">Son fotos ilustrativas, no de la propiedad: en la placa se marca “Imagen ilustrativa”.</p>
+          <p class="status" id="pxStatus">These are illustrative photos, not of the property: the slide is marked “Illustrative image”.</p>
           <div id="pxGrid" class="pxgrid"></div>
-          <button id="pxMore" hidden>Ver más</button>
-          <p class="pxcredit">Fotos de <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a></p>
+          <button id="pxMore" hidden>Load more</button>
+          <p class="pxcredit">Photos from <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a></p>
         </details>
       </section>
 
       <section class="panel">
-        <p class="step">Paso 4</p>
-        <h2>Marca y estilo</h2>
+        <p class="step">Step 4</p>
+        <h2>Brand and style</h2>
         <div class="stack">
           <div class="styles" id="styles"></div>
           <div class="fields">
-            <div><label for="f_lang">Idioma del diseño</label>
-              <select id="f_lang"><option value="es">Español</option><option value="en">English</option></select></div>
-            <div id="accentWrap"><label for="f_accent">Color de acento</label><input id="f_accent" type="color" value="#5A0F14" style="height:40px;padding:4px"></div>
-            <div><label for="f_brand">Marca / inmobiliaria</label><input id="f_brand" type="text"></div>
-            <div><label for="f_handle">@ o WhatsApp</label><input id="f_handle" type="text"></div>
-            <div class="full"><label for="f_cta">Llamado a la acción</label><input id="f_cta" type="text" placeholder="Escribinos por DM y coordinamos tu visita"></div>
-            <div class="full"><label for="f_credit">Crédito (opcional)</label><input id="f_credit" type="text" placeholder="Propiedad publicada por ..."></div>
+            <div><label for="f_lang">Design and caption language</label>
+              <select id="f_lang"><option value="en">English</option><option value="es">Español</option></select></div>
+            <div id="accentWrap"><label for="f_accent">Accent color</label><input id="f_accent" type="color" value="#5A0F14" style="height:40px;padding:4px"></div>
+            <div><label for="f_brand">Brand / agency</label><input id="f_brand" type="text"></div>
+            <div><label for="f_handle">@ or WhatsApp</label><input id="f_handle" type="text"></div>
+            <div class="full"><label for="f_cta">Call to action</label><input id="f_cta" type="text" placeholder="DM us to book your private showing"></div>
+            <div class="full"><label for="f_credit">Credit (optional)</label><input id="f_credit" type="text" placeholder="Listed by ..."></div>
           </div>
           <div>
-            <label for="logoInput">Logo (PNG con fondo transparente)</label>
-            <div class="row"><input id="logoInput" type="file" accept="image/*"><button id="logoClear" hidden>Quitar logo</button></div>
+            <label for="logoInput">Logo (PNG with transparent background)</label>
+            <div class="row"><input id="logoInput" type="file" accept="image/*"><button id="logoClear" hidden>Remove logo</button></div>
           </div>
         </div>
       </section>
@@ -189,50 +191,50 @@ figcaption button{padding:4px 9px;font-size:12px}
       <section class="panel">
         <div id="missing" class="warn" hidden></div>
         <div class="tabs" role="tablist" style="margin-top:14px">
-          <button role="tab" data-tab="feed" aria-selected="true">Carrusel 4:5</button>
-          <button role="tab" data-tab="stories" aria-selected="false">Historias</button>
+          <button role="tab" data-tab="feed" aria-selected="true">4:5 Carousel</button>
+          <button role="tab" data-tab="stories" aria-selected="false">Stories</button>
           <button role="tab" data-tab="reel" aria-selected="false">Reel</button>
-          <button role="tab" data-tab="copy" aria-selected="false">Textos</button>
-          <button role="tab" data-tab="check" aria-selected="false">Antes de publicar</button>
+          <button role="tab" data-tab="copy" aria-selected="false">Caption</button>
+          <button role="tab" data-tab="check" aria-selected="false">Before you post</button>
         </div>
         <div id="tab-feed" class="out feed"></div>
         <div id="tab-stories" class="out tall" hidden></div>
         <div id="tab-reel" hidden>
           <div class="reelbox">
-            <h2 style="margin:0 0 6px">Video del reel</h2>
-            <p class="hint" style="margin:0 0 12px">Arma un video vertical de unos 20 segundos con tus fotos, el texto y animaciones, en el estilo elegido. Se graba en tiempo real: dejá la pantalla abierta mientras tanto.</p>
-            <div class="row"><button id="btnReel" class="primary">Generar video</button><button id="btnReelSave" hidden>Guardar video</button></div>
+            <h2 style="margin:0 0 6px">Reel video</h2>
+            <p class="hint" style="margin:0 0 12px">Builds a vertical video of about 20 seconds with your photos, text and animations, in the style you picked. It records in real time, so keep the screen open while it works.</p>
+            <div class="row"><button id="btnReel" class="primary">Create video</button><button id="btnReelSave" hidden>Save video</button></div>
             <div id="reelStatus" class="status" role="status" style="margin-top:8px"></div>
             <canvas id="reelCanvas" hidden></canvas>
             <video id="reelVideo" controls playsinline loop hidden></video>
           </div>
-          <h2 style="margin:24px 0 12px">Portada del reel</h2>
+          <h2 style="margin:24px 0 12px">Reel cover</h2>
           <div id="reelCovers" class="out tall"></div>
         </div>
         <div id="tab-copy" hidden>
           <div class="stack">
-            <div class="row" style="justify-content:space-between"><h2 style="margin:0">Caption en español</h2><button data-copy="capES">Copiar</button></div>
+            <div class="row" style="justify-content:space-between"><h2 style="margin:0">Caption</h2><button data-copy="capES">Copy</button></div>
             <div id="capES" class="copybox"></div>
-            <div class="row" style="justify-content:space-between"><h2 style="margin:0">Texto alternativo de las fotos</h2><button data-copy="altTxt">Copiar</button></div>
+            <div class="row" style="justify-content:space-between"><h2 style="margin:0">Photo alt text</h2><button data-copy="altTxt">Copy</button></div>
             <div id="altTxt" class="copybox"></div>
           </div>
         </div>
         <div id="tab-check" hidden>
-          <h2>Revisá antes de publicar</h2>
+          <h2>Check before you post</h2>
           <ul class="check">
-            <li><b>Permiso de las fotos.</b> Confirmá que la inmobiliaria o el dueño te dejan usarlas. Si tienen marca de agua de un portal, pedí las originales.</li>
-            <li><b>Datos.</b> Todo lo que está en el diseño sale de la ficha. Verificá precio, m² y ambientes con la inmobiliaria.</li>
-            <li><b>Fotos.</b> Mirá que las verticales estén derechas, que haya buena luz y que no haya cosas tiradas. No retoques nada que cambie cómo es la propiedad.</li>
-            <li><b>Contacto.</b> El llamado a la acción tiene que llevar a quien atiende las consultas (tu DM o el WhatsApp de la inmobiliaria).</li>
-            <li><b>Condiciones.</b> Si el aviso aclara algo (apto crédito, venta condicionada, expensas), sumalo al caption.</li>
+            <li><b>Photo rights.</b> Make sure the agency or the owner lets you use the photos. If they carry a portal watermark, ask for the originals.</li>
+            <li><b>Details.</b> Everything in the design comes from the property details. Double-check price, size and rooms with the listing agent.</li>
+            <li><b>Photos.</b> Check that vertical lines are straight, the light is good and nothing is lying around. Don't retouch anything that changes what the property is like.</li>
+            <li><b>Contact.</b> The call to action should lead to whoever answers inquiries (your DMs or the agency's WhatsApp).</li>
+            <li><b>Conditions.</b> If the listing mentions anything special (HOA fees, financing, contingencies), add it to the caption.</li>
           </ul>
         </div>
       </section>
       <section class="saveall">
-        <button id="btnZip" class="primary">Guardar todo</button>
+        <button id="btnZip" class="primary">Save all</button>
         <div id="saveStatus" class="status" role="status"></div>
       </section>
-      <p class="foot"><button id="logout" style="padding:6px 10px;font-size:12px">Salir</button> Los diseños se arman en tu navegador. Usá solo fotos que tengas permiso de publicar. Hecho por GSC Studio.</p>
+      <p class="foot"><button id="logout" style="padding:6px 10px;font-size:12px">Log out</button> Designs are created in your browser. Only use photos you have permission to post. Made by GSC Studio.</p>
     </div>
   </div>
 </div>
@@ -242,39 +244,42 @@ figcaption button{padding:4px 9px;font-size:12px}
 const $ = id => document.getElementById(id);
 const T = {
   es:{venta:"En venta", alquiler:"En alquiler", temporario:"Alquiler temporario", facts:"Datos clave", m2:"m² cubiertos", lot:"m² terreno", amb:"ambientes", dorm:"dormitorios", bath:"baños", car:"cocheras", ask:"Precio a consultar", visit:"Coordiná tu visita", cta:"Escribinos y te pasamos la ficha completa", swipe:"Deslizá →", price:"Precio"},
-  en:{venta:"For sale", alquiler:"For rent", temporario:"Short-term rental", facts:"Key facts", m2:"sq m built", lot:"sq m lot", amb:"rooms", dorm:"bedrooms", bath:"bathrooms", car:"parking", ask:"Price on request", visit:"Book a visit", cta:"Send us a message for the full listing", swipe:"Swipe →", price:"Price"}
+  en:{venta:"For sale", alquiler:"For rent", temporario:"Short-term rental", facts:"Key facts", m2:"sq m built", lot:"sq m lot", amb:"rooms", dorm:"bedrooms", bath:"bathrooms", car:"parking", ask:"Price on request", visit:"Book a showing", cta:"Send us a message for the full listing", swipe:"Swipe →", price:"Price"}
 };
 const S = {style:"oscuro", photos:[], logo:null};
 const out = {feed:[], stories:[], reel:[]};
 
 /* ---------- ejemplo inicial ---------- */
-const SAMPLE = {f_title:"Casa con jardín y pileta", f_type:"Casa", f_loc:"Ejemplo · Zona Norte", f_price:"", f_m2:"220", f_lot:"600", f_amb:"5", f_dorm:"3", f_bath:"2", f_car:"2", f_hl:"Jardín con pileta\nLiving con doble altura\nCocina integrada al comedor\nGalería con parrilla", f_brand:"Tu inmobiliaria", f_handle:"@tuinmobiliaria", f_cta:""};
+const SAMPLE = {f_title:"Family home with garden and pool", f_type:"House", f_loc:"Sample · North Hills", f_price:"", f_m2:"2,400", f_lot:"6,500", f_amb:"", f_dorm:"3", f_bath:"2", f_car:"2", f_hl:"Private pool and garden\nDouble-height living room\nOpen kitchen and dining\nCovered patio with grill", f_brand:"Your Agency", f_handle:"@youragency", f_cta:""};
 Object.entries(SAMPLE).forEach(([k,v])=>{$(k).value=v;});
-$("parseStatus").textContent="Estás viendo un ejemplo. Pegá tu aviso y subí tus fotos para reemplazarlo.";
+$("parseStatus").textContent="This is a sample. Paste your listing and add your photos to replace it.";
 
 /* ---------- lectura del texto ---------- */
 function num(re, txt){const m=txt.match(re); return m?m[1].replace(/\s/g,""):"";}
 function parseText(txt){
   const t=txt.replace(/ /g," ");
   const r={};
-  r.f_dorm=num(/(\d+)\s*(?:dormitorios?|dorm\.?|habitaciones?|cuartos?|bedrooms?)/i,t);
-  r.f_bath=num(/(\d+)\s*(?:baños?|bathrooms?)/i,t);
+  r.f_dorm=num(/(\d+)\s*(?:dormitorios?|dorm\.?|habitaciones?|cuartos?|bedrooms?|beds?|bd)\b/i,t);
+  r.f_bath=num(/(\d+(?:\.\d)?)\s*(?:baños?|bathrooms?|baths?|ba)\b/i,t);
   r.f_amb=num(/(\d+)\s*(?:ambientes?|amb\.?)/i,t);
-  r.f_car=num(/(\d+)\s*(?:cocheras?|garages?|estacionamientos?)/i,t);
+  r.f_car=num(/(\d+)\s*(?:-?\s*car\s*)?(?:cocheras?|garages?|estacionamientos?|parking\s*spaces?)/i,t);
   r.f_m2=num(/(\d[\d.,]*)\s*m(?:²|2|ts2?)\s*(?:cub|cubiertos?|construidos?)/i,t) || num(/(?:cubiert[oa]s?|construid[oa]s?)\D{0,12}(\d[\d.,]*)\s*m/i,t);
   r.f_lot=num(/(\d[\d.,]*)\s*m(?:²|2|ts2?)\s*(?:de\s*)?(?:terreno|lote|tot|totales?)/i,t) || num(/(?:terreno|lote|totales?)\D{0,12}(\d[\d.,]*)\s*m/i,t);
+  const sq=num(/(\d[\d,.]*)\s*(?:sq\.?\s*ft\.?|sqft|square\s*feet)/i,t);
+  if(sq&&!r.f_m2){ r.f_m2=sq; $("f_unit").value="sqft"; } else if(r.f_m2) $("f_unit").value="m2";
+  const lt=num(/(\d[\d,.]*)\s*(?:sq\.?\s*ft\.?|sqft|square\s*feet)\s*lot/i,t)||num(/lot(?:\s*size)?\D{0,6}(\d[\d,.]*)\s*(?:sq|acres?)/i,t); if(lt&&!r.f_lot) r.f_lot=lt;
   const p=t.match(/(USD|U\$S|US\$|u\$d|\$)\s?([\d.,]{4,})/i);
-  if(p) r.f_price=(/\$/.test(p[1])&&!/u/i.test(p[1])?"$ ":"USD ")+p[2];
-  if(/alquiler\s+temporario/i.test(t)) r.f_op="temporario"; else if(/alquiler|alquila/i.test(t)) r.f_op="alquiler"; else if(/venta|vende/i.test(t)) r.f_op="venta";
+  if(p) r.f_price=(/\$/.test(p[1])&&!/u/i.test(p[1])?"$":"USD ")+p[2].replace(/[.,]+$/,"");
+  if(/alquiler\s+temporario/i.test(t)) r.f_op="temporario"; else if(/alquiler|alquila|for\s+rent|for\s+lease/i.test(t)) r.f_op="alquiler"; else if(/venta|vende|for\s+sale/i.test(t)) r.f_op="venta";
   let n=0; Object.entries(r).forEach(([k,v])=>{ if(v){ $(k).value=v; n++; } });
   return n;
 }
 $("btnParse").onclick=()=>{
   const txt=$("raw").value.trim();
-  if(!txt){$("parseStatus").textContent="Pegá primero el texto del aviso.";return;}
+  if(!txt){$("parseStatus").textContent="Paste the listing text first.";return;}
   clearSample();
   const n=parseText(txt);
-  $("parseStatus").textContent = n? `Encontré ${n} datos. Revisá la ficha y completá titular, barrio y puntos fuertes.` : "No encontré datos con números. Completá la ficha a mano.";
+  $("parseStatus").textContent = n? `Found ${n} details. Check the property details and fill in the headline, neighborhood and highlights.` : "No numbers found. Fill in the details by hand.";
   schedule();
 };
 let sampleCleared=false;
@@ -288,28 +293,28 @@ function clearSample(){
 let linkMissing=[];
 $("btnLink").onclick=async()=>{
   const url=$("src").value.trim();
-  if(!/^https?:\/\//i.test(url)){$("linkStatus").textContent="Pegá un link que empiece con https://";return;}
-  $("btnLink").disabled=true; $("linkStatus").className="status"; $("linkStatus").textContent="Leyendo el aviso…";
+  if(!/^https?:\/\//i.test(url)){$("linkStatus").textContent="Paste a link that starts with https://";return;}
+  $("btnLink").disabled=true; $("linkStatus").className="status"; $("linkStatus").textContent="Reading the listing…";
   try{
     const r=await fetch("/api/extract?url="+encodeURIComponent(url)); if(r.status===401){ location.href="/"; return; } const d=await r.json();
     if(d.error){$("linkStatus").textContent=d.error; return;}
     clearSample(); sampleCleared=true;
     const map={f_title:d.title,f_loc:d.location,f_price:d.price,f_m2:d.m2,f_lot:d.lot,f_amb:d.rooms,f_dorm:d.bedrooms,f_bath:d.bathrooms,f_car:d.parking};
     Object.entries(map).forEach(([k,v])=>{$(k).value=v||"";});
-    if(d.op) $("f_op").value=d.op;
+    if(d.op) $("f_op").value=d.op; if(d.unit) $("f_unit").value=d.unit;
     if(d.description) $("raw").value=d.description;
     let got=0;
     if(d.images&&d.images.length){
-      $("linkStatus").textContent=`Bajando ${d.images.length} fotos…`;
+      $("linkStatus").textContent=`Downloading ${d.images.length} photos…`;
       S.photos=[];
       for(const u of d.images){ try{ S.photos.push(await loadRemote(u)); got++; }catch(e){} }
       renderThumbs();
     }
-    linkMissing=(d.missing||[]).filter(x=>x!=="Fotos"||!got);
+    linkMissing=(d.missing||[]).filter(x=>x!=="Photos"||!got);
     $("linkStatus").className="status ok";
-    $("linkStatus").textContent=`Listo: ${got} fotos y ${9-(d.missing||[]).filter(x=>x!=="Fotos").length} de 9 datos.`+(linkMissing.length?` No encontré: ${linkMissing.join(", ")}. Completalo en la ficha.`:"")+" Escribí los puntos fuertes y revisá todo.";
+    $("linkStatus").textContent=`Done: ${got} photos and ${9-(d.missing||[]).filter(x=>x!=="Photos").length} of 9 details.`+(linkMissing.length?` Not found: ${linkMissing.join(", ")}. Fill it in under Property details.`:"")+" Add your highlights and check everything.";
     schedule();
-  }catch(e){ $("linkStatus").textContent="No pude leer el link. Pegá el texto y subí las fotos a mano."; }
+  }catch(e){ $("linkStatus").textContent="Couldn't read the link. Paste the text and add the photos by hand."; }
   finally{ $("btnLink").disabled=false; }
 };
 function loadUrl(src,cors){return new Promise((res,rej)=>{const im=new Image(); if(cors) im.crossOrigin="anonymous"; im.onload=()=>res({img:im,url:src});im.onerror=rej;im.src=src;});}
@@ -336,7 +341,7 @@ function renderThumbs(){
   const box=$("thumbs"); box.innerHTML="";
   S.photos.forEach((p,i)=>{
     const d=document.createElement("div"); d.className="thumb"+(i===0?" cover":"");
-    d.innerHTML=`<img src="${p.url}" alt="Foto ${i+1}">${i===0?'<span class="tag">Portada</span>':""}${p.img._stock?'<span class="stock">Pexels</span>':""}${!p.img._stock&&Math.max(p.img.naturalWidth,p.img.naturalHeight)<1000?'<span class="lowres" title="Esta foto viene chica del aviso. Para mejor calidad subí la original.">Baja resolución</span>':""}<button class="x" aria-label="Quitar foto ${i+1}">×</button><div class="mv"><button aria-label="Mover antes">‹</button><button aria-label="Mover después">›</button></div>`;
+    d.innerHTML=`<img src="${p.url}" alt="Photo ${i+1}">${i===0?'<span class="tag">Cover</span>':""}${p.img._stock?'<span class="stock">Pexels</span>':""}${!p.img._stock&&Math.max(p.img.naturalWidth,p.img.naturalHeight)<1000?'<span class="lowres" title="This photo is small in the listing. Upload the original for better quality.">Low resolution</span>':""}<button class="x" aria-label="Remove photo ${i+1}">×</button><div class="mv"><button aria-label="Move earlier">‹</button><button aria-label="Move later">›</button></div>`;
     d.querySelector(".x").onclick=()=>{S.photos.splice(i,1);renderThumbs();schedule();};
     const [l,r]=d.querySelectorAll(".mv button");
     l.onclick=()=>{ if(i>0){[S.photos[i-1],S.photos[i]]=[S.photos[i],S.photos[i-1]];renderThumbs();schedule();} };
@@ -345,27 +350,27 @@ function renderThumbs(){
   });
 }
 /* ---------- fotos de stock (Pexels) ---------- */
-const PX_CHIPS=["fachada casa moderna","living moderno","cocina moderna","dormitorio","baño moderno","pileta","jardín","departamento","vista ciudad","oficina"];
+const PX_CHIPS=["modern house exterior","modern living room","modern kitchen","bedroom","modern bathroom","swimming pool","garden","apartment","city view","home office"];
 let pxPage=1, pxLast="";
 PX_CHIPS.forEach(t=>{const b=document.createElement("button"); b.type="button"; b.textContent=t; b.onclick=()=>{$("pxQ").value=t; pxSearch(true);}; $("pxChips").appendChild(b);});
 async function pxSearch(fresh){
-  const q=$("pxQ").value.trim(), st=$("pxStatus"); if(!q){ st.textContent="Escribí qué foto buscás."; return; }
+  const q=$("pxQ").value.trim(), st=$("pxStatus"); if(!q){ st.textContent="Type what photo you need."; return; }
   if(fresh){ pxPage=1; $("pxGrid").innerHTML=""; } pxLast=q;
-  st.className="status"; st.textContent="Buscando…"; $("pxGo").disabled=true;
+  st.className="status"; st.textContent="Searching…"; $("pxGo").disabled=true;
   try{
     const r=await fetch(`/api/pexels?q=${encodeURIComponent(q)}&page=${pxPage}`); if(r.status===401){ location.href="/"; return; }
     const d=await r.json(); if(d.error){ st.textContent=d.error; return; }
-    if(!d.photos.length&&fresh){ st.textContent="No encontré fotos. Probá con otras palabras."; return; }
+    if(!d.photos.length&&fresh){ st.textContent="No photos found. Try other words."; return; }
     d.photos.forEach(ph=>{
-      const b=document.createElement("button"); b.type="button"; b.title=`${ph.alt||"Foto"} · ${ph.by} (Pexels)`;
-      b.innerHTML=`<img src="${ph.thumb}" alt="${(ph.alt||"Foto de stock").replace(/"/g,"")}" loading="lazy">`;
-      b.onclick=async()=>{ if(b.classList.contains("added")) return; st.textContent="Agregando foto…";
-        try{ const p=await loadRemote(ph.full); p.img._stock=true; p.credit=ph.by; S.photos.push(p); b.classList.add("added"); renderThumbs(); schedule(); st.className="status ok"; st.textContent=`Agregada (foto de ${ph.by}). Tocá otra para sumar más.`; }
-        catch(e){ st.textContent="No pude bajar esa foto. Probá con otra."; } };
+      const b=document.createElement("button"); b.type="button"; b.title=`${ph.alt||"Photo"} · ${ph.by} (Pexels)`;
+      b.innerHTML=`<img src="${ph.thumb}" alt="${(ph.alt||"Stock photo").replace(/"/g,"")}" loading="lazy">`;
+      b.onclick=async()=>{ if(b.classList.contains("added")) return; st.textContent="Adding photo…";
+        try{ const p=await loadRemote(ph.full); p.img._stock=true; p.credit=ph.by; S.photos.push(p); b.classList.add("added"); renderThumbs(); schedule(); st.className="status ok"; st.textContent=`Added (photo by ${ph.by}). Tap another one to add more.`; }
+        catch(e){ st.textContent="Couldn't download that photo. Try another one."; } };
       $("pxGrid").appendChild(b);
     });
-    $("pxMore").hidden=!d.more; st.className="status"; st.textContent="Tocá las fotos que quieras sumar. Son ilustrativas: en la placa se marca “Imagen ilustrativa”.";
-  }catch(e){ st.textContent="No pude buscar en Pexels. Probá de nuevo."; }
+    $("pxMore").hidden=!d.more; st.className="status"; st.textContent="Tap the photos you want to add. They are illustrative, so the slide is marked “Illustrative image”.";
+  }catch(e){ st.textContent="Couldn't search Pexels. Try again."; }
   finally{ $("pxGo").disabled=false; }
 }
 $("pxGo").onclick=()=>pxSearch(true);
@@ -379,10 +384,12 @@ $("logoClear").onclick=()=>{S.logo=null;$("logoInput").value="";$("logoClear").h
 function data(){
   const v=k=>$(k).value.trim();
   return {src:v("src"),title:v("f_title"),op:$("f_op").value,type:v("f_type"),loc:v("f_loc"),price:v("f_price"),m2:v("f_m2"),lot:v("f_lot"),amb:v("f_amb"),dorm:v("f_dorm"),bath:v("f_bath"),car:v("f_car"),
-    hl:v("f_hl").split("\n").map(s=>s.trim()).filter(Boolean).slice(0,4),lang:$("f_lang").value,accent:$("f_accent").value,brand:v("f_brand"),handle:v("f_handle"),cta:v("f_cta"),credit:v("f_credit"),raw:$("raw").value};
+    hl:v("f_hl").split("\n").map(s=>s.trim()).filter(Boolean).slice(0,4),lang:$("f_lang").value,accent:$("f_accent").value,brand:v("f_brand"),handle:v("f_handle"),cta:v("f_cta"),credit:v("f_credit"),raw:$("raw").value,unit:$("f_unit").value};
 }
 function facts(d,t){
-  return [[d.m2,t.m2],[d.lot,t.lot],[d.amb,t.amb],[d.dorm,t.dorm],[d.bath,t.bath],[d.car,t.car]].filter(f=>f[0]);
+  const m=d.unit==="m2", es=d.lang==="es";
+  const lm=es?(m?"m² cubiertos":"pies² cubiertos"):(m?"m² living":"sq ft"), ll=es?(m?"m² terreno":"pies² terreno"):(m?"m² lot":"sq ft lot");
+  return [[d.m2,lm],[d.lot,ll],[d.amb,t.amb],[d.dorm,t.dorm],[d.bath,t.bath],[d.car,t.car]].filter(f=>f[0]);
 }
 
 /* ---------- dibujo ---------- */
@@ -396,7 +403,7 @@ function level(img,k){ // devuelve la foto achicada a 1/2^k
     const c=canvas(Math.max(1,Math.round(pw/2)),Math.max(1,Math.round(ph/2))); c.getContext("2d").drawImage(prev,0,0,c.width,c.height); arr.push(c); }
   return arr[k];
 }
-function noPhoto(ctx,x,y,w,h){ctx.fillStyle="#CFC6BB";ctx.fillRect(x,y,w,h);ctx.fillStyle="#7A6E66";ctx.font="600 34px Manrope, sans-serif";ctx.textAlign="center";ctx.fillText("Subí tus fotos",x+w/2,y+h/2);ctx.textAlign="left";}
+function noPhoto(ctx,x,y,w,h){ctx.fillStyle="#CFC6BB";ctx.fillRect(x,y,w,h);ctx.fillStyle="#7A6E66";ctx.font="600 34px Manrope, sans-serif";ctx.textAlign="center";ctx.fillText("Add your photos",x+w/2,y+h/2);ctx.textAlign="left";}
 function coverFit(ctx,img,x,y,w,h){
   if(!img){noPhoto(ctx,x,y,w,h);return;}
   const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
@@ -472,7 +479,7 @@ const F={
 /* Cada estilo dibuja 4 tipos de pieza: cover, photo, facts, cta. W×H puede ser 4:5 o 9:16.
    Reglas: todo el texto centrado; cada texto aparece una sola vez; el nombre de la marca (sin logo) solo en el cierre. */
 const STYLES = {
-  oscuro:{name:"Editorial oscuro", draw(x,W,H,k,c){
+  oscuro:{name:"Dark editorial", draw(x,W,H,k,c){
     const M=W*0.074, bg="#2B1E17", cream="#F2EADF", muted="#BFAF9F", ac=c.accent, cx=W/2;
     if(k==="cover"||k==="photo"){
       const band=k==="cover"?H*0.3:H*(c.sub?0.3:0.2), top=H-band;
@@ -501,7 +508,7 @@ const STYLES = {
       if(c.handle){ const fh=fit(x,c.handle,W-2*M,1,W*0.038,W*0.026,F.mont(800)); lines(x,fh,cx,H-M,1,"center"); }
     }}},
 
-  cielo:{name:"Cielo premium", draw(x,W,H,k,c){
+  cielo:{name:"Sky premium", draw(x,W,H,k,c){
     const M=W*0.07, gold="#E8C47A", deep="rgba(20,44,110,", white="#FFFFFF", cx=W/2;
     if(k==="facts"){ x.drawImage(blurred(c.img,W,H,20),0,0); x.fillStyle=deep+"0.55)"; x.fillRect(0,0,W,H); }
     else { coverFit(x,c.img,0,0,W,H); vgrad(x,0,H*0.55,deep+"0.92)",deep+"0)",W); vgrad(x,H,H*0.75,"rgba(0,0,0,0.55)","rgba(0,0,0,0)",W); }
@@ -525,7 +532,7 @@ const STYLES = {
       if(c.handle){ x.font=F.jost(600)(W*0.034); const tw=Math.min(W-2*M,x.measureText(c.handle).width+W*0.08); x.strokeStyle=white; x.lineWidth=2; rrect(x,cx-tw/2,H-H*0.12,tw,W*0.075,W*0.0375); x.stroke(); x.fillStyle=white; x.textAlign="center"; x.fillText(c.handle,cx,H-H*0.12+W*0.05); x.textAlign="left"; }
     }}},
 
-  sold:{name:"Revista", draw(x,W,H,k,c){
+  sold:{name:"Magazine", draw(x,W,H,k,c){
     const M=W*0.07, white="#FFFFFF", paper="#F5F1EA", ink="#1A1A1A", cx=W/2;
     if(k==="facts"){
       x.fillStyle=paper; x.fillRect(0,0,W,H);
@@ -556,7 +563,7 @@ const STYLES = {
       brandMark(x,c,cx,H-M-W*0.13,"center",white,F.jost(500)(W*0.026),5,W*0.06);
     }}},
 
-  vidrio:{name:"Vidrio", draw(x,W,H,k,c){
+  vidrio:{name:"Glass", draw(x,W,H,k,c){
     const white="#FFFFFF", vertical=H/W>1.5, sw=vertical?W:W*0.51, sh=vertical?H*0.5:H;
     const b=blurred(c.img,W,H,22); x.drawImage(b,0,0); x.fillStyle="rgba(10,30,40,0.28)"; x.fillRect(0,0,W,H);
     clipCover(x,c.img,0,0,sw,sh,0,0,W,H);
@@ -593,7 +600,7 @@ const STYLES = {
       const bw=Math.min(iw,x.measureText(btn).width+W*0.1); x.strokeStyle=white; x.lineWidth=2; rrect(x,cx-bw/2,y,bw,W*0.065,W*0.0325); x.stroke(); x.fillStyle=white; x.textAlign="center"; x.fillText(btn,cx,y+W*0.043); x.textAlign="left"; }
   }},
 
-  ventana:{name:"Ventana", draw(x,W,H,k,c){
+  ventana:{name:"Window", draw(x,W,H,k,c){
     x.drawImage(blurred(c.img,W,H,30),0,0); x.fillStyle="rgba(255,255,255,0.12)"; x.fillRect(0,0,W,H);
     const vertical=H/W>1.5, fw=W*(vertical?0.56:0.42), fh=H*(vertical?0.46:0.5), fx=(W-fw)/2, fy=H*(vertical?0.1:0.07);
     clipCover(x,c.img,fx,fy,fw,fh,0,0,W,H);
@@ -613,7 +620,7 @@ const STYLES = {
     if(k==="cta"&&c.handle){ x.fillStyle=white; sfit(x,c.handle.toUpperCase(),cx,by+W*0.02,4,W-2*M,F.corm(500),W*0.026); }
   }},
 
-  arco:{name:"Arco", draw(x,W,H,k,c){
+  arco:{name:"Arch", draw(x,W,H,k,c){
     coverFit(x,c.img,0,0,W,H);
     const navy="#1F2A44", card="#F7F3EC", cw=W*0.46, ch=H*(H/W>1.5?0.66:0.78), cx=(W-cw)/2, cy=(H-ch)/2, mid=W/2, pad=cw*0.1;
     x.shadowColor="rgba(0,0,0,0.25)"; x.shadowBlur=30; x.fillStyle=card; x.fillRect(cx,cy,cw,ch); x.shadowBlur=0;
@@ -642,14 +649,14 @@ function content(d,t){
   const big = d.lang==="es"? (d.op==="venta"?"En venta":"Alquiler") : (d.op==="venta"?"For sale":"For rent");
   return {title:d.title||d.type||(d.lang==="es"?"Tu propiedad":"Your property"), loc:d.loc, eyebrow:opLabel(d,t), facts:facts(d,t), hl:d.hl,
     price:d.price||t.ask, cta:d.cta||t.cta, visit:t.visit, handle:d.handle, brand:d.brand, factsLabel:t.facts, accent:d.accent, big, lang:d.lang,
-    desc:d.lang==="es"?sentences(d.raw):[]};
+    desc:sentences(d.raw)};
 }
 // Frases de la descripción del aviso para acompañar cada foto (sin contactos ni precios).
 function sentences(raw){
   const out=[], seen=new Set();
   String(raw||"").replace(/\r/g,"").split(/\n+|(?<=[.!?])\s+/).forEach(x=>{
     let t=x.replace(/^[-•*·\s]+/,"").replace(/\s+/g," ").trim();
-    if(/https?:|www\.|@|whats|tel[:é.]|\d{6,}|U\$S|USD|\$\s?\d/i.test(t)) return;
+    if(/https?:|www\.|@|whats|tel[:é.]|phone|call us|\d{6,}|U\$S|USD|\$\s?\d/i.test(t)) return;
     if(t.length>150){ const c=t.slice(0,150).lastIndexOf(","); t=c>40?t.slice(0,c)+".":""; }
     if(t.length<25||t.split(" ").length<4) return;
     if(!/[.!?]$/.test(t)) t+=".";
@@ -694,16 +701,16 @@ function render(){
   const feed=[], stories=[], reel=[];
   const W=1080,H=1350, n=S.photos.length;
   const extra=Math.min(Math.max(n-1,0),4) || (n?0:2), pl=plan(base,extra);
-  feed.push({c:piece(st,W,H,"cover",base,{img:photo(0),img2:photo(1)}),name:"carrusel-01-portada"});
+  feed.push({c:piece(st,W,H,"cover",base,{img:photo(0),img2:photo(1)}),name:"carousel-01-cover"});
   for(let i=0;i<extra;i++)
-    feed.push({c:piece(st,W,H,"photo",base,{img:photo(i+1),img2:photo(i+2)||photo(0),cap:pl.caps[i],sub:pl.subs[i]}),name:`carrusel-0${feed.length+1}-foto`});
-  feed.push({c:piece(st,W,H,"facts",{...base,facts:pl.facts},{img:photo(Math.min(n-1,5))||photo(0),img2:photo(1)||photo(0)}),name:`carrusel-0${feed.length+1}-datos`});
-  feed.push({c:piece(st,W,H,"cta",base,{img:photo(n>2?2:0),img2:photo(0)}),name:`carrusel-0${feed.length+1}-contacto`});
+    feed.push({c:piece(st,W,H,"photo",base,{img:photo(i+1),img2:photo(i+2)||photo(0),cap:pl.caps[i],sub:pl.subs[i]}),name:`carousel-0${feed.length+1}-photo`});
+  feed.push({c:piece(st,W,H,"facts",{...base,facts:pl.facts},{img:photo(Math.min(n-1,5))||photo(0),img2:photo(1)||photo(0)}),name:`carousel-0${feed.length+1}-facts`});
+  feed.push({c:piece(st,W,H,"cta",base,{img:photo(n>2?2:0),img2:photo(0)}),name:`carousel-0${feed.length+1}-contact`});
   const SW=1080,SH=1920;
-  stories.push({c:piece(st,SW,SH,"cover",base,{img:photo(0),img2:photo(1)}),name:"historia-01"});
-  stories.push({c:piece(st,SW,SH,"facts",base,{img:photo(1)||photo(0),img2:photo(2)||photo(0)}),name:"historia-02"});
-  stories.push({c:piece(st,SW,SH,"cta",base,{img:photo(2)||photo(0),img2:photo(0)}),name:"historia-03"});
-  reel.push({c:piece(st,SW,SH,"cover",base,{img:photo(0),img2:photo(1)}),name:"portada-reel"});
+  stories.push({c:piece(st,SW,SH,"cover",base,{img:photo(0),img2:photo(1)}),name:"story-01"});
+  stories.push({c:piece(st,SW,SH,"facts",base,{img:photo(1)||photo(0),img2:photo(2)||photo(0)}),name:"story-02"});
+  stories.push({c:piece(st,SW,SH,"cta",base,{img:photo(2)||photo(0),img2:photo(0)}),name:"story-03"});
+  reel.push({c:piece(st,SW,SH,"cover",base,{img:photo(0),img2:photo(1)}),name:"reel-cover"});
   out.feed=feed; out.stories=stories; out.reel=reel;
   show("tab-feed",feed); show("tab-stories",stories); show("reelCovers",reel);
   captions(d); missing(d); previews(base);
@@ -714,7 +721,7 @@ function render(){
 const stylesEl = $("styles");
 Object.entries(STYLES).forEach(([k,v])=>{
   const b=document.createElement("button"); b.type="button"; b.className="style-opt"; b.dataset.k=k;
-  b.innerHTML=`<img alt="Vista previa del estilo ${v.name}"><b>${v.name}</b>`;
+  b.innerHTML=`<img alt="Preview of the ${v.name} style"><b>${v.name}</b>`;
   b.onclick=()=>{S.style=k; markStyle(); schedule();};
   stylesEl.appendChild(b);
 });
@@ -735,36 +742,42 @@ function show(id,list){
     const img=new Image(); img.src=it.c.toDataURL("image/jpeg",0.92); img.alt=it.name.replace(/-/g," ");
     fig.appendChild(img);
     const cap=document.createElement("figcaption"); cap.innerHTML=`<span>${String(i+1).padStart(2,"0")} · ${it.c.width}×${it.c.height}</span>`;
-    const b=document.createElement("button"); b.textContent="Guardar"; b.onclick=()=>savePNG(it);
+    const b=document.createElement("button"); b.textContent="Save"; b.onclick=()=>savePNG(it);
     cap.appendChild(b); fig.appendChild(cap); box.appendChild(fig);
   });
 }
 
 /* ---------- textos ---------- */
-function slug(s){return (s||"propiedad").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"propiedad";}
+function slug(s){return (s||"property").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"property";}
 function tag(s){return s?"#"+s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9]/g,""):"";}
 function captions(d){
-  const es=T.es;
-  const fe=facts(d,es);
-  const place=d.loc?` en ${d.loc}`:"";
-  const head=(d.title||d.type||"Propiedad")+place;
-  const tags=[...new Set([d.loc&&d.loc.split(/[·,]/).map(s=>tag(s.trim())), tag(d.type), d.op==="venta"?"#EnVenta":"#EnAlquiler", d.type?tag(d.type+(d.op==="venta"?"EnVenta":"EnAlquiler")):"", "#RealEstateArgentina","#Propiedades","#Inmobiliaria"].flat().filter(Boolean))].slice(0,10).join(" ");
+  const es=d.lang==="es", t=es?T.es:T.en, fe=facts(d,t), sale=d.op==="venta";
+  const head=(d.title||d.type||(es?"Propiedad":"Property"))+(d.loc?(es?" en ":" in ")+d.loc:"");
+  const loctags=d.loc?d.loc.split(/[·,]/).map(x=>tag(x.trim())):[];
+  const tags=[...new Set((es
+    ? [loctags, tag(d.type), sale?"#EnVenta":"#EnAlquiler", d.type?tag(d.type+(sale?"EnVenta":"EnAlquiler")):"", "#Propiedades","#Inmobiliaria","#RealEstate"]
+    : [loctags, sale?"#HomeForSale":"#ForRent", "#JustListed", d.type?tag(d.type+(sale?"ForSale":"ForRent")):"", "#RealEstate","#DreamHome","#Realtor","#HouseHunting"]
+  ).flat().filter(Boolean))].slice(0,10).join(" ");
   let s=`${head} 🏡\n\n`;
   d.hl.forEach(h=>s+=`• ${h}\n`);
   if(fe.length) s+=`• ${fe.map(f=>f[0]+" "+f[1]).join(" · ")}\n`;
-  s+=`\n${d.price?es.price+": "+d.price:es.ask}.\n${d.cta||es.cta} 📩\n`;
+  s+=`\n${d.price?t.price+": "+d.price:t.ask}.\n${d.cta||t.cta} 📩\n`;
   if(d.handle) s+=`\n${d.handle}`;
   if(d.credit) s+=`\n${d.credit}`;
   s+=`\n\n${tags}`;
   $("capES").textContent=s;
-  $("altTxt").textContent=S.photos.length? S.photos.map((p,i)=>`Foto ${i+1}: ${i===0?"portada de ":""}${(d.type||"propiedad").toLowerCase()}${d.loc?" en "+d.loc:""}. [describí qué se ve]`).join("\n") : "Subí fotos para armar el texto alternativo.";
+  const kind=(d.type||(es?"propiedad":"property")).toLowerCase();
+  $("altTxt").textContent=S.photos.length? S.photos.map((p,i)=>es
+      ? `Foto ${i+1}: ${i===0?"portada de ":""}${kind}${d.loc?" en "+d.loc:""}. [describí qué se ve]`
+      : `Photo ${i+1}: ${i===0?"cover photo of ":""}${kind}${d.loc?" in "+d.loc:""}. [describe what you see]`).join("\n")
+    : (es?"Subí fotos para armar el texto alternativo.":"Add photos to get the alt text.");
 }
 function missing(d){
-  const m=[]; if(!d.title) m.push("Titular"); if(!d.loc) m.push("Barrio y ciudad"); if(!d.price) m.push("Precio (va “a consultar”)");
-  if(!d.m2&&!d.lot) m.push("Superficie"); if(!d.dorm&&!d.amb) m.push("Ambientes o dormitorios"); if(!d.bath) m.push("Baños");
-  if(!d.hl.length) m.push("Puntos fuertes"); if(!S.photos.length) m.push("Fotos"); if(!d.handle) m.push("Contacto (@ o WhatsApp)");
+  const m=[]; if(!d.title) m.push("Headline"); if(!d.loc) m.push("Neighborhood and city"); if(!d.price) m.push("Price (shows “price on request”)");
+  if(!d.m2&&!d.lot) m.push("Size"); if(!d.dorm&&!d.amb) m.push("Bedrooms or rooms"); if(!d.bath) m.push("Bathrooms");
+  if(!d.hl.length) m.push("Highlights"); if(!S.photos.length) m.push("Photos"); if(!d.handle) m.push("Contact (@ or WhatsApp)");
   const box=$("missing"); box.hidden=!m.length;
-  box.innerHTML=m.length?`<b>[a completar]</b> Lo que falta no aparece en el diseño:<ul>${m.map(x=>`<li>${x}</li>`).join("")}</ul>`:"";
+  box.innerHTML=m.length?`<b>[to fill in]</b> Anything missing is left out of the design:<ul>${m.map(x=>`<li>${x}</li>`).join("")}</ul>`:"";
 }
 
 /* ---------- descargas: galería en el celu, JPG en la compu ---------- */
@@ -775,15 +788,15 @@ async function saveFiles(items){
   const d=data(), base=slug(d.title||d.loc);
   const files=await Promise.all(items.map(async it=>new File([await jpgOf(it.c)],`${base}-${it.name}.jpg`,{type:"image/jpeg"})));
   if(mobile&&navigator.canShare&&navigator.canShare({files})){
-    try{ await navigator.share({files}); msg("Elegí “Guardar imágenes” para que vayan a la galería.",true); return; }
-    catch(e){ if(e&&e.name==="AbortError"){ msg("Cancelado."); return; } }
+    try{ await navigator.share({files}); msg("Choose “Save images” to put them in your photos.",true); return; }
+    catch(e){ if(e&&e.name==="AbortError"){ msg("Canceled."); return; } }
   }
   for(const f of files){ const u=URL.createObjectURL(f), a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),5000); await new Promise(r=>setTimeout(r,350)); }
-  msg(files.length>1?`Descargando ${files.length} imágenes JPG.`:"Descargando "+files[0].name,true);
+  msg(files.length>1?`Downloading ${files.length} JPG images.`:"Downloading "+files[0].name,true);
 }
 async function savePNG(it){ await saveFiles([it]); }
 $("btnZip").onclick=()=>saveFiles([...out.feed,...out.stories,...out.reel]);
-$("btnZip").textContent = mobile? "Guardar todo en la galería" : "Descargar todo (JPG)";
+$("btnZip").textContent = mobile? "Save all to photos" : "Download all (JPG)";
 
 /* ---------- reel animado (video 9:16 con las fotos y el texto) ---------- */
 const REEL_THEME = {
@@ -898,8 +911,8 @@ function pickMime(){
 let reelBlob=null;
 async function makeReel(){
   const mime=pickMime(), st=$("reelStatus"), btn=$("btnReel");
-  if(!mime){ st.textContent="Este navegador no puede grabar video. Probá con Chrome o Safari actualizados."; return; }
-  if(!S.photos.length){ st.textContent="Subí o traé fotos primero."; return; }
+  if(!mime){ st.textContent="This browser can't record video. Try an up-to-date Chrome or Safari."; return; }
+  if(!S.photos.length){ st.textContent="Add some photos first."; return; }
   btn.disabled=true; $("btnReelSave").hidden=true; $("reelVideo").hidden=true; reelBlob=null;
   const reel=buildReel(), cv=$("reelCanvas"); cv.hidden=false; cv.width=reel.W; cv.height=reel.H;
   const x=cv.getContext("2d"); x.imageSmoothingQuality="high";
@@ -911,14 +924,14 @@ async function makeReel(){
   const t0=performance.now();
   await new Promise(res=>{ (function loop(){ const tm=(performance.now()-t0)/1000;
     if(tm>=reel.total){ drawReelFrame(x,reel,reel.total-0.01); return res(); }
-    drawReelFrame(x,reel,tm); st.textContent=`Grabando el reel… ${Math.round(tm/reel.total*100)}% (dejá la pantalla abierta)`; requestAnimationFrame(loop); })(); });
+    drawReelFrame(x,reel,tm); st.textContent=`Recording the reel… ${Math.round(tm/reel.total*100)}% (keep the screen open)`; requestAnimationFrame(loop); })(); });
   rec.stop(); await done; stream.getTracks().forEach(t=>t.stop());
   reelBlob=new Blob(chunks,{type:mime.split(";")[0]});
   const v=$("reelVideo"); v.src=URL.createObjectURL(reelBlob); v.hidden=false; cv.hidden=true;
   $("btnReelSave").hidden=false; btn.disabled=false;
-  st.className="status ok"; st.textContent=`Listo: ${Math.round(reel.total)} segundos.`+(mime.includes("webm")?" Quedó en formato WebM: si Instagram no lo acepta, generalo desde el celu (Safari) para tener MP4.":" Sumale música desde Instagram al publicarlo.");
+  st.className="status ok"; st.textContent=`Done: ${Math.round(reel.total)} seconds.`+(mime.includes("webm")?" It's a WebM file: if Instagram doesn't accept it, create it on your phone (Safari) to get an MP4.":" Add music in Instagram when you post it.");
 }
-$("btnReel").onclick=()=>makeReel().catch(()=>{ $("btnReel").disabled=false; $("reelStatus").textContent="No se pudo grabar el video. Probá de nuevo."; });
+$("btnReel").onclick=()=>makeReel().catch(()=>{ $("btnReel").disabled=false; $("reelStatus").textContent="Couldn't record the video. Try again."; });
 $("btnReelSave").onclick=async()=>{
   if(!reelBlob) return; const d=data(), ext=reelBlob.type.includes("mp4")?"mp4":"webm";
   const f=new File([reelBlob],`${slug(d.title||d.loc)}-reel.${ext}`,{type:reelBlob.type});
@@ -933,7 +946,7 @@ document.querySelectorAll("[role=tab]").forEach(b=>b.onclick=()=>{
 });
 document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>{
   const el=$(b.dataset.copy), txt=el.textContent;
-  navigator.clipboard.writeText(txt).then(()=>msg("Copiado.",true)).catch(()=>{const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);msg("Seleccionado: copialo con Ctrl+C o mantené apretado.");});
+  navigator.clipboard.writeText(txt).then(()=>msg("Copied.",true)).catch(()=>{const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);msg("Selected: copy it with Ctrl+C or long-press.");});
 });
 
 $("logout").onclick=async()=>{ try{ await fetch("/api/login",{method:"DELETE"}); }catch(e){} location.href="/"; };

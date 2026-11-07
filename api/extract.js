@@ -78,28 +78,29 @@ const { session } = require("../lib/auth");
 
 module.exports = async (req, res) => {
   let who = null; try { who = await session(req); } catch (e) {}
-  if (!who) return res.status(401).json({ error: "Tu sesión venció. Volvé a entrar con tu código." });
+  if (!who) return res.status(401).json({ error: "Your session expired. Log in again with your code." });
   const url = (req.query && req.query.url) || "";
   res.setHeader("Cache-Control", "s-maxage=600");
-  if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "Pegá un link que empiece con http:// o https://" });
+  if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "Paste a link that starts with http:// or https://" });
   let html = "";
   try {
-    const r = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": "es-AR,es;q=0.9,en;q=0.8", Accept: "text/html" }, redirect: "follow" });
-    if (!r.ok) return res.status(200).json({ blocked: true, status: r.status, error: `El sitio no dejó leer el aviso (código ${r.status}). Pegá el texto y subí las fotos a mano.` });
+    const r = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9,es;q=0.8", Accept: "text/html" }, redirect: "follow" });
+    if (!r.ok) return res.status(200).json({ blocked: true, status: r.status, error: `The site didn't let us read the listing (code ${r.status}). Paste the text and add the photos by hand.` });
     html = await r.text();
   } catch (e) {
-    return res.status(200).json({ blocked: true, error: "No pude conectarme con el sitio. Pegá el texto y subí las fotos a mano." });
+    return res.status(200).json({ blocked: true, error: "Couldn't connect to the site. Paste the text and add the photos by hand." });
   }
   if (/captcha|cf-chl|Attention Required|Just a moment/i.test(html) && html.length < 60000)
-    return res.status(200).json({ blocked: true, error: "El sitio pidió verificación anti-robots (pasa seguido con Zonaprop). Probá con el aviso en la web de la inmobiliaria o pegá el texto." });
+    return res.status(200).json({ blocked: true, error: "The site asked for a bot check (common on big portals). Try the listing on the agency's own website, or paste the text." });
 
   const ld = jsonLd(html);
   const t = text(html);
   const offer = ld.find(o => o.offers || o.price) || {};
   const priceLd = offer.offers ? [].concat(offer.offers)[0] : offer;
   let price = "";
-  if (priceLd && priceLd.price) price = `${priceLd.priceCurrency === "USD" ? "USD" : priceLd.priceCurrency || "$"} ${Number(priceLd.price).toLocaleString("es-AR")}`;
-  if (!price) { const p = t.match(/(USD|U\$S|US\$|u\$d)\s?([\d.,]{4,})/i); if (p) price = "USD " + p[2]; }
+  if (priceLd && priceLd.price) price = `${priceLd.priceCurrency === "USD" ? "USD" : priceLd.priceCurrency || "$"} ${Number(priceLd.price).toLocaleString("en-US")}`;
+  if (!price) { const p = t.match(/(USD|U\$S|US\$|u\$d)\s?([\d.,]{4,})/i); if (p) price = "USD " + p[2].replace(/[.,]+$/, ""); }
+  if (!price) { const p = t.match(/\$\s?(\d{1,3}(?:,\d{3})+)/); if (p) price = "$" + p[1]; }
 
   const title = meta(html, "og:title") || (html.match(/<title>([^<]*)<\/title>/i) || [])[1] || "";
   const description = meta(html, "og:description") || meta(html, "description");
@@ -113,16 +114,19 @@ module.exports = async (req, res) => {
     price,
     m2: num(/(\d[\d.,]*)\s*m(?:²|2|ts2?)\s*(?:cub|cubiertos?)/i, t) || num(/(?:sup(?:erficie)?\.?\s*cubierta)\D{0,12}(\d[\d.,]*)/i, t),
     lot: num(/(\d[\d.,]*)\s*m(?:²|2|ts2?)\s*(?:de\s*)?(?:terreno|lote|tot|totales?)/i, t) || num(/(?:terreno|sup(?:erficie)?\.?\s*total)\D{0,12}(\d[\d.,]*)/i, t),
+    sqft: num(/(\d[\d,]*)\s*(?:sq\.?\s*ft\.?|sqft|square\s*feet)/i, t),
     rooms: num(/(\d+)\s*(?:ambientes?|amb\.)/i, t),
-    bedrooms: num(/(\d+)\s*(?:dormitorios?|dorm\.|habitaciones?)/i, t),
-    bathrooms: num(/(\d+)\s*baños?/i, t),
-    parking: num(/(\d+)\s*(?:cocheras?|garages?)/i, t),
-    op: /alquiler\s+temporario/i.test(t) ? "temporario" : /\balquiler\b/i.test(title + " " + description) ? "alquiler" : "venta",
+    bedrooms: num(/(\d+)\s*(?:dormitorios?|dorm\.|habitaciones?|bedrooms?|beds?|bd)\b/i, t),
+    bathrooms: num(/(\d+(?:\.\d)?)\s*(?:baños?|bathrooms?|baths?|ba)\b/i, t),
+    parking: num(/(\d+)\s*(?:-?\s*car\s*)?(?:cocheras?|garages?|parking\s*spaces?)/i, t),
+    op: /alquiler\s+temporario|vacation\s+rental/i.test(t) ? "temporario" : /\balquiler\b|for\s+rent|for\s+lease/i.test(title + " " + description) ? "alquiler" : "venta",
     images: await Promise.all(images(html, url, ld).map(upgrade)),
     source: url
   };
-  const labels = { title: "Titular", location: "Barrio y ciudad", price: "Precio", m2: "m² cubiertos", lot: "m² terreno", rooms: "Ambientes", bedrooms: "Dormitorios", bathrooms: "Baños", parking: "Cocheras" };
+  if (!data.m2 && data.sqft) { data.m2 = data.sqft; data.unit = "sqft"; } else if (data.m2) data.unit = "m2";
+  delete data.sqft;
+  const labels = { title: "Headline", location: "Neighborhood and city", price: "Price", m2: "Living area", lot: "Lot size", rooms: "Rooms", bedrooms: "Bedrooms", bathrooms: "Bathrooms", parking: "Parking" };
   data.missing = Object.keys(labels).filter(k => !data[k]).map(k => labels[k]);
-  if (!data.images.length) data.missing.push("Fotos");
+  if (!data.images.length) data.missing.push("Photos");
   res.status(200).json(data);
 };

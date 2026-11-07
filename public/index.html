@@ -1,38 +1,38 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Listing a Redes</title>
-<meta name="description" content="Pegá el link de una propiedad y obtené el carrusel, las historias y la portada de reel para Instagram.">
+<meta name="description" content="Paste a property link and get the Instagram carousel, stories, reel cover and an animated reel.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <main class="wrap" style="max-width:520px">
   <h1>Listing a Redes</h1>
-  <p class="lead">Del link de una propiedad al carrusel, las historias y la portada del reel, listos para Instagram.</p>
+  <p class="lead">From a property link to a ready-to-post Instagram carousel, stories and reel.</p>
   <form id="f" class="box">
-    <p class="eyebrow">Acceso</p>
-    <label for="code">Tu código de acceso</label>
+    <p class="eyebrow">Access</p>
+    <label for="code">Your access code</label>
     <input id="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="XXXXX-XXXXX">
-    <div style="margin-top:14px"><button class="primary" id="go" style="width:100%">Entrar</button></div>
+    <div style="margin-top:14px"><button class="primary" id="go" style="width:100%">Log in</button></div>
     <div id="msg" class="msg" role="status"></div>
   </form>
-  <p class="foot">Cada código funciona en hasta 2 dispositivos (por ejemplo, tu celu y tu compu).</p>
+  <p class="foot">Each code works on up to 2 devices (for example, your phone and your computer). You received it by email after your purchase.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 function device(){ let d=null; try{ d=localStorage.getItem("lar_device"); }catch(e){}
   if(!d){ d=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,"0")).join(""); try{ localStorage.setItem("lar_device",d); }catch(e){} } return d; }
 async function login(code){
-  $("go").disabled=true; $("msg").className="msg"; $("msg").textContent="Verificando…";
+  $("go").disabled=true; $("msg").className="msg"; $("msg").textContent="Checking…";
   try{
     const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,device:device()})});
     const j=await r.json().catch(()=>({}));
     if(r.ok){ location.href="/app"; return; }
-    $("msg").className="msg bad"; $("msg").textContent=j.error||"No se pudo entrar.";
-  }catch(e){ $("msg").className="msg bad"; $("msg").textContent="Sin conexión. Probá de nuevo."; }
+    $("msg").className="msg bad"; $("msg").textContent=j.error||"Couldn't log in.";
+  }catch(e){ $("msg").className="msg bad"; $("msg").textContent="No connection. Try again."; }
   $("go").disabled=false;
 }
 $("f").onsubmit=e=>{e.preventDefault(); const c=$("code").value.trim(); if(c) login(c);};
