@@ -4,14 +4,14 @@ const { session } = require("../lib/auth");
 
 async function pixabay(key, q, o, page) {
   const orientation = o === "landscape" ? "horizontal" : o === "portrait" ? "vertical" : "all";
-  const u = `https://pixabay.com/api/?key=${encodeURIComponent(key)}&q=${encodeURIComponent(q)}&image_type=photo&orientation=${orientation}&safesearch=true&per_page=18&page=${page}&lang=en`;
+  const u = `https://pixabay.com/api/?key=${encodeURIComponent(key)}&q=${encodeURIComponent(q)}&image_type=photo&orientation=${orientation}&safesearch=true&per_page=18&page=${page}&lang=es`;
   const r = await fetch(u);
   if (r.status === 400 || r.status === 401 || r.status === 403) {
     const t = await r.text();
-    if (/key/i.test(t)) return { error: "The Pixabay key isn't valid." };
+    if (/key/i.test(t)) return { error: "La clave de Pixabay no es válida." };
     return { photos: [], more: false };
   }
-  if (!r.ok) return { error: "Pixabay didn't respond. Try again in a while." };
+  if (!r.ok) return { error: "Pixabay no respondió. Probá de nuevo en un rato." };
   const d = await r.json();
   return {
     source: "Pixabay",
@@ -25,10 +25,10 @@ async function pixabay(key, q, o, page) {
 }
 
 async function pexels(key, q, o, page) {
-  const u = `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=18&page=${page}&orientation=${o}&locale=en-US`;
+  const u = `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=18&page=${page}&orientation=${o}&locale=es-ES`;
   const r = await fetch(u, { headers: { Authorization: key } });
-  if (r.status === 401 || r.status === 403) return { error: "The Pexels key isn't valid." };
-  if (!r.ok) return { error: "Pexels didn't respond. Try again in a while." };
+  if (r.status === 401 || r.status === 403) return { error: "La clave de Pexels no es válida." };
+  if (!r.ok) return { error: "Pexels no respondió. Probá de nuevo en un rato." };
   const d = await r.json();
   return {
     source: "Pexels",
@@ -43,16 +43,16 @@ async function pexels(key, q, o, page) {
 
 module.exports = async (req, res) => {
   let who = null; try { who = await session(req); } catch (e) {}
-  if (!who) return res.status(401).json({ error: "Your session expired. Log in again with your code." });
+  if (!who) return res.status(401).json({ error: "Tu sesión venció. Volvé a entrar con tu código." });
   const pxb = process.env.PIXABAY_API_KEY, pxl = process.env.PEXELS_API_KEY;
-  if (!pxb && !pxl) return res.status(200).json({ error: "Stock photo search isn't set up yet (PIXABAY_API_KEY)." });
+  if (!pxb && !pxl) return res.status(200).json({ error: "Falta conectar el buscador de fotos (PIXABAY_API_KEY)." });
   const q = String((req.query && req.query.q) || "").trim().slice(0, 80);
-  if (!q) return res.status(400).json({ error: "Type what photo you need." });
+  if (!q) return res.status(400).json({ error: "Escribí qué foto buscás." });
   const o = ["portrait", "landscape", "square"].includes(req.query.o) ? req.query.o : "portrait";
   const page = Math.max(1, Math.min(20, parseInt(req.query.page) || 1));
   try {
     const out = pxb ? await pixabay(pxb, q, o, page) : await pexels(pxl, q, o, page);
     if (!out.error) res.setHeader("Cache-Control", "s-maxage=3600");
     res.status(200).json(out);
-  } catch (e) { res.status(200).json({ error: "Couldn't connect to the stock photo service." }); }
+  } catch (e) { res.status(200).json({ error: "No pude conectarme con el buscador de fotos." }); }
 };
