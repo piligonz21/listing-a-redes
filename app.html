@@ -87,6 +87,14 @@ figcaption button{padding:4px 9px;font-size:12px}
 .saveall{margin-top:24px;border:1px solid var(--line);padding:24px;display:flex;flex-direction:column;gap:10px;align-items:stretch}
 .saveall button{padding:16px;font-size:16px}
 .reelbox{border:1px solid var(--line);padding:20px}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.room{display:flex;flex-direction:column;gap:6px}
+.room img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border:1px solid var(--line)}
+.room .pano{aspect-ratio:2/1}
+.room input{font-size:14px;padding:8px}
+.room .rx{align-self:flex-start;font-size:13px;padding:4px 10px}
+.reelbox .tourmedia{max-width:100%;aspect-ratio:auto}
+#tourFrame{display:block;width:100%;height:560px;border:1px solid var(--line);margin-top:12px;background:#111}
 .reelbox canvas,.reelbox video{display:block;width:100%;max-width:300px;aspect-ratio:9/16;margin-top:12px;background:#000;border:1px solid var(--line)}
 .foot{margin-top:28px;font-size:12px;color:var(--muted)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -192,6 +200,7 @@ figcaption button{padding:4px 9px;font-size:12px}
           <button role="tab" data-tab="feed" aria-selected="true">Carrusel 4:5</button>
           <button role="tab" data-tab="stories" aria-selected="false">Historias</button>
           <button role="tab" data-tab="reel" aria-selected="false">Reel</button>
+          <button role="tab" data-tab="tour" aria-selected="false">Recorrido</button>
           <button role="tab" data-tab="copy" aria-selected="false">Textos</button>
           <button role="tab" data-tab="check" aria-selected="false">Antes de publicar</button>
         </div>
@@ -208,6 +217,40 @@ figcaption button{padding:4px 9px;font-size:12px}
           </div>
           <h2 style="margin:24px 0 12px">Portada del reel</h2>
           <div id="reelCovers" class="out tall"></div>
+        </div>
+        <div id="tab-tour" hidden>
+          <div class="reelbox">
+            <h2 style="margin:0 0 6px">Recorrido de la propiedad</h2>
+            <p class="hint" style="margin:0 0 12px">Para mandarle a tus clientes por WhatsApp o mail. Usa las fotos del paso 3 en el mismo orden (ordenalas como se recorre la casa: entrada, living, cocina…). Poné el nombre de cada ambiente:</p>
+            <datalist id="roomNames"><option>Fachada</option><option>Entrada</option><option>Living</option><option>Comedor</option><option>Living comedor</option><option>Cocina</option><option>Dormitorio principal</option><option>Dormitorio</option><option>Baño</option><option>Toilette</option><option>Vestidor</option><option>Escritorio</option><option>Lavadero</option><option>Balcón</option><option>Terraza</option><option>Jardín</option><option>Pileta</option><option>Quincho</option><option>Galería</option><option>Cochera</option><option>Vista</option><option>Amenities</option></datalist>
+            <div id="tourRooms" class="rooms"></div>
+          </div>
+          <div class="reelbox" style="margin-top:16px">
+            <h2 style="margin:0 0 6px">1 · Video recorrido</h2>
+            <p class="hint" style="margin:0 0 12px">Un video con movimiento de cámara, como si caminaras por la propiedad: presentación, cada ambiente con su nombre, datos clave y contacto. Se graba en tiempo real: dejá la pantalla abierta.</p>
+            <div class="row"><select id="tourFmt" style="max-width:300px"><option value="h">Horizontal 16:9 (WhatsApp, mail, YouTube)</option><option value="v">Vertical 9:16 (celular, historias)</option></select>
+              <button id="btnTour" class="primary">Generar video</button><button id="btnTourSave" hidden>Descargar video</button></div>
+            <div id="tourStatus" class="status" role="status" style="margin-top:8px"></div>
+            <canvas id="tourCanvas" class="tourmedia" hidden></canvas>
+            <video id="tourVideo" class="tourmedia" controls playsinline hidden></video>
+          </div>
+          <div class="reelbox" style="margin-top:16px">
+            <h2 style="margin:0 0 6px">2 · Recorrido 3D interactivo</h2>
+            <p class="hint" style="margin:0 0 12px">Un archivo que tu cliente abre en el celu o la compu (sin instalar nada) y recorre ambiente por ambiente. Con fotos 360° puede girar y mirar para todos lados; las fotos comunes se ven con movimiento suave.</p>
+            <div class="row"><button id="panoAdd">Sumar fotos 360°</button><input id="panoInput" type="file" accept="image/*" multiple hidden></div>
+            <div id="panoList" class="rooms" style="margin-top:10px"></div>
+            <details class="pexels" style="margin-top:10px"><summary>¿Cómo saco fotos 360°?</summary>
+              <ul class="check" style="margin-top:8px">
+                <li><b>Con una cámara 360°</b> (Insta360, Ricoh Theta): es lo mejor. Exportá la foto “equirectangular” (JPG, el doble de ancha que de alta).</li>
+                <li><b>Con el celular:</b> apps como Panorama 360 o Teleport arman la foto 360° girando en el lugar. Sostené el celu a la altura del pecho y no te muevas del punto.</li>
+                <li>Una foto por ambiente, desde el centro, con todas las luces prendidas.</li>
+                <li>Sin fotos 360° también funciona: el recorrido usa las fotos comunes.</li>
+              </ul>
+            </details>
+            <div class="row" style="margin-top:12px"><button id="btnTour3d" class="primary">Ver recorrido</button><button id="btnTour3dSave">Descargar recorrido</button></div>
+            <div id="tour3dStatus" class="status" role="status" style="margin-top:8px"></div>
+            <iframe id="tourFrame" title="Vista previa del recorrido" hidden></iframe>
+          </div>
         </div>
         <div id="tab-copy" hidden>
           <div class="stack">
@@ -359,6 +402,7 @@ function renderThumbs(){
     r.onclick=()=>{ if(i<S.photos.length-1){[S.photos[i+1],S.photos[i]]=[S.photos[i],S.photos[i+1]];renderThumbs();schedule();} };
     box.appendChild(d);
   });
+  renderTourRooms();
 }
 /* ---------- fotos de stock (Pexels) ---------- */
 const PX_CHIPS=["fachada casa moderna","living moderno","cocina moderna","dormitorio","baño moderno","pileta","jardín","departamento","vista ciudad","oficina"];
@@ -947,10 +991,264 @@ $("btnReelSave").onclick=async()=>{
   const u=URL.createObjectURL(f), a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),8000);
 };
 
+
+/* ---------- recorrido: video con movimiento de cámara + recorrido 3D descargable ---------- */
+const TOUR_T={es:{tour:"Recorrido",of:"de",space:"Ambiente",contact:"Contacto",info:"Datos",drag:"Arrastrá para mirar alrededor",prev:"Anterior",next:"Siguiente",close:"Cerrar"},
+  en:{tour:"Tour",of:"of",space:"Room",contact:"Contact",info:"Details",drag:"Drag to look around",prev:"Previous",next:"Next",close:"Close"}};
+S.panos=[];
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function renderTourRooms(){
+  const box=$("tourRooms"); if(!box) return; box.innerHTML="";
+  if(!S.photos.length){ box.innerHTML='<p class="hint">Primero sumá fotos en el paso 3.</p>'; return; }
+  S.photos.forEach((p,i)=>{
+    const d=document.createElement("label"); d.className="room";
+    d.innerHTML=`<img src="${p.url}" alt="Foto ${i+1}"><input list="roomNames" placeholder="${i===0?"Ej: Fachada":"Ej: Living"}" value="${esc(p.room)}" aria-label="Ambiente de la foto ${i+1}">`;
+    d.querySelector("input").oninput=e=>{ p.room=e.target.value.trim(); };
+    box.appendChild(d);
+  });
+}
+function renderPanos(){
+  const box=$("panoList"); box.innerHTML="";
+  S.panos.forEach((p,i)=>{
+    const d=document.createElement("div"); d.className="room";
+    d.innerHTML=`<img class="pano" src="${p.url}" alt="Foto 360 ${i+1}"><input list="roomNames" placeholder="Ej: Living" value="${esc(p.room)}" aria-label="Ambiente de la foto 360 ${i+1}"><button class="rx" type="button">Quitar</button>`;
+    d.querySelector("input").oninput=e=>{ p.room=e.target.value.trim(); };
+    d.querySelector(".rx").onclick=()=>{ S.panos.splice(i,1); renderPanos(); };
+    box.appendChild(d);
+  });
+}
+$("panoAdd").onclick=()=>$("panoInput").click();
+$("panoInput").onchange=async e=>{
+  const st=$("tour3dStatus"); let bad=0;
+  for(const f of e.target.files){ try{ const p=await loadImg(f); const r=p.img.naturalWidth/p.img.naturalHeight; if(r<1.8||r>2.2) bad++; S.panos.push(p); }catch(err){} }
+  e.target.value=""; renderPanos();
+  st.className="status"+(bad?"":" ok"); st.textContent=bad?`${bad} foto(s) no parecen 360° (tienen que ser el doble de anchas que de altas). Igual se suman, pero pueden verse estiradas.`:"Fotos 360° agregadas. Poneles el nombre del ambiente.";
+};
+
+// Video recorrido
+function buildTour(fmt){
+  const d=data(), t=T[d.lang], tt=TOUR_T[d.lang]||TOUR_T.es, c=content(d,t), th=REEL_THEME[S.style]||REEL_THEME.oscuro;
+  const W=fmt==="v"?1080:1920, H=fmt==="v"?1920:1080, U=Math.min(W,H), wide=W>H;
+  const ph=S.photos.slice(0,14), n=ph.length, scenes=[];
+  const shade=(x,a)=>{ const g=x.createLinearGradient(0,H*0.45,0,H); g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,`rgba(0,0,0,${0.72*a})`); x.fillStyle=g; x.fillRect(0,H*0.45,W,H*0.55); };
+  // cámara: avanza hacia adentro de la foto y se desplaza de costado, como caminando
+  const cam=(x,img,p,i,boost=0)=>{
+    const z=1.06+0.16*ease(p)+boost, dir=i%2?1:-1, dx=dir*W*0.045*(p-0.5)*2, dy=-H*0.012*p;
+    x.save(); x.translate(W/2+dx,H/2+dy); x.scale(z,z); x.translate(-W/2,-H/2); coverFit(x,img,0,0,W,H); x.restore();
+    if(img&&img._stock) stockTag(x,W,H);
+  };
+  const label=(x,l,du,big,small,i)=>{
+    const a=Math.min(ease((l-0.5)/0.6),1-ease((l-(du-0.6))/0.5)); if(a<=0) return;
+    shade(x,a); const M=U*0.07, y=H-M-U*0.02;
+    x.globalAlpha=a; x.fillStyle=th.accent||"#FFF"; const ln=ease((l-0.5)/0.8)*U*0.09; x.fillRect(M,y-U*0.115,ln,3);
+    if(small){ x.fillStyle="#FFF"; x.font=th.small(U*0.026); x.textAlign="left"; spaced(x,small.toUpperCase(),M,y-U*0.07,4); }
+    if(big){ x.fillStyle="#FFF"; const f=fit(x,big,W-2*M,1,U*0.075,U*0.045,th.title); x.font=th.title(f.size); x.textAlign="left"; x.fillText(f.lines[0],M+(1-ease((l-0.5)/0.7))*U*0.03,y); }
+    x.globalAlpha=1; x.textAlign="left";
+  };
+  const dots=(x,i)=>{ if(n<2) return; const r=U*0.006, gap=U*0.022, w=(n-1)*gap, x0=W-U*0.07-w, y=H-U*0.07;
+    for(let k=0;k<n;k++){ x.globalAlpha=k===i?1:0.45; x.fillStyle="#FFF"; x.beginPath(); x.arc(x0+k*gap,y,k===i?r*1.4:r,0,7); x.fill(); } x.globalAlpha=1; };
+  // 1. presentación
+  scenes.push({dur:4.2,cam:true,draw:(x,l,du,b=0)=>{ cam(x,ph[0]&&ph[0].img,l/du,0,b);
+    x.fillStyle="rgba(0,0,0,0.35)"; x.fillRect(0,0,W,H);
+    const a=Math.min(ease((l-0.3)/0.8),1-ease((l-(du-0.6))/0.5)), M=U*0.08;
+    x.globalAlpha=a; x.fillStyle=th.accent||"#FFF"; x.textAlign="center";
+    sfit(x,[tt.tour,c.eyebrow].filter(Boolean).join(" · ").toUpperCase(),W/2,H*0.4,6,W-2*M,th.small,U*0.03);
+    x.textAlign="center"; x.fillStyle="#FFF"; const tl=th.upper?c.title.toUpperCase():c.title, f=fit(x,tl,W*(wide?0.7:0.84),2,U*0.1,U*0.06,th.title);
+    x.font=th.title(f.size); f.lines.forEach((ln,k)=>{ const li=ease((l-0.5-k*0.15)/0.7); x.globalAlpha=Math.min(a,li); x.fillText(ln,W/2,H*0.4+U*0.06+f.size*(k+0.9)*1.05+(1-li)*20); });
+    x.globalAlpha=a; if(d.price){ x.font=th.small(U*0.036); x.fillText(d.price,W/2,H*0.4+U*0.12+f.size*f.lines.length*1.05+U*0.03); }
+    x.textAlign="left"; x.globalAlpha=Math.min(a,1); drawLogo(x,W/2,U*0.06,W*0.3,U*0.09,"center"); x.globalAlpha=1;
+    cornerFrame(x,W,H,Math.min((l-0.2)/0.9,1-(l-(du-0.5))/0.5),"#FFFFFF"); }});
+  // 2. cada ambiente
+  ph.forEach((p,i)=>{
+    const room=p.room||"", small=`${tt.tour} · ${i+1} ${tt.of} ${n}`;
+    scenes.push({dur:4.4,cam:true,draw:(x,l,du,b=0)=>{ cam(x,p.img,l/du,i,b); label(x,l,du,room,small,i); dots(x,i); }});
+  });
+  // 3. datos clave
+  const fs=c.facts.slice(0,6), bg=blurred(ph[0]&&ph[0].img,W,H,24);
+  if(fs.length||d.price) scenes.push({dur:5,draw:(x,l,du)=>{
+    x.drawImage(bg,0,0); x.fillStyle="rgba(0,0,0,0.5)"; x.fillRect(0,0,W,H);
+    const out=1-ease((l-(du-0.5))/0.45), cols=wide?3:2, rows=Math.ceil(fs.length/cols), cw=W*(wide?0.24:0.38), rh=U*(wide?0.2:0.22);
+    const top=H/2-rows*rh/2-(d.price?U*0.05:0);
+    x.globalAlpha=ease(l/0.5)*out; x.fillStyle=th.accent||"#FFF"; x.textAlign="center"; sfit(x,c.factsLabel.toUpperCase(),W/2,top-U*0.06,6,W*0.8,th.small,U*0.03);
+    fs.forEach((fa,k)=>{ const p=ease((l-0.3-k*0.15)/0.6); if(p<=0) return;
+      const r=Math.floor(k/cols), inRow=Math.min(cols,fs.length-r*cols), col=k%cols, cx=W/2+(col-(inRow-1)/2)*cw, cy=top+r*rh+U*0.1;
+      const num=/^\d+$/.test(fa[0])?String(Math.round(+fa[0]*p)):fa[0];
+      x.globalAlpha=p*out; x.fillStyle="#FFF"; x.textAlign="center"; x.font=th.title(U*0.1); x.fillText(num,cx,cy+(1-p)*30); x.font=th.small(U*0.028); x.fillText(fa[1],cx,cy+U*0.055); });
+    if(d.price){ x.globalAlpha=ease((l-1)/0.6)*out; x.fillStyle="#FFF"; x.textAlign="center"; const fp=fit(x,c.price,W*0.8,1,U*0.055,U*0.035,th.small); x.font=th.small(fp.size); x.fillText(fp.lines[0],W/2,top+rows*rh+U*0.12); }
+    x.textAlign="left"; x.globalAlpha=1; }});
+  // 4. contacto
+  scenes.push({dur:4.4,cam:true,draw:(x,l,du,b=0)=>{ cam(x,ph[Math.min(1,n-1)]&&ph[Math.min(1,n-1)].img,l/du,3,b);
+    x.fillStyle="rgba(0,0,0,0.55)"; x.fillRect(0,0,W,H);
+    const a=ease((l-0.3)/0.7), M=U*0.08; x.globalAlpha=a; x.textAlign="center";
+    const hasLogo=drawLogo(x,W/2,H*0.22,W*0.36,U*0.13,"center");
+    x.fillStyle="#FFF"; const f=fit(x,c.visit+".",W-2*M,2,U*0.095,U*0.06,th.title); x.font=th.title(f.size); f.lines.forEach((ln,k)=>x.fillText(ln,W/2,H*0.5+k*f.size*1.05));
+    x.font=th.small(U*0.032); wrap(x,c.cta,W*(wide?0.6:0.8)).slice(0,2).forEach((ln,k)=>x.fillText(ln,W/2,H*0.5+f.lines.length*f.size*1.05+U*0.04+k*U*0.045));
+    x.fillStyle=th.accent||"#FFF"; const who=[hasLogo?"":c.brand,c.handle].filter(Boolean).join("   ·   ").toUpperCase();
+    if(who) sfit(x,who,W/2,H*0.8,4,W-2*M,th.small,U*0.03);
+    x.textAlign="left"; x.globalAlpha=1; cornerFrame(x,W,H,(l-0.6)/0.9,"#FFFFFF"); }});
+  let acc=0; scenes.forEach(s=>{s.start=acc; acc+=s.dur;});
+  return {W,H,scenes,total:acc,sig:{brand:c.brand,handle:c.handle}};
+}
+// transición "caminando": la escena anterior sigue avanzando hacia adelante mientras aparece la próxima
+function drawTourFrame(x,tour,time){
+  const {scenes,W,H}=tour, X=1.0;
+  let i=scenes.findIndex(s=>time<s.start+s.dur); if(i<0) i=scenes.length-1;
+  const s=scenes[i], l=time-s.start;
+  x.fillStyle="#000"; x.fillRect(0,0,W,H);
+  if(i===0||l>=X){ s.draw(x,l,s.dur); }
+  else {
+    const p=scenes[i-1], q=ease(l/X);
+    if(p.cam) p.draw(x,p.dur-0.001,p.dur,0.35*q); else p.draw(x,p.dur-0.001,p.dur);
+    x.globalAlpha=q; s.draw(x,l,s.dur,s.cam?-0.06*(1-q):0); x.globalAlpha=1;
+  }
+  const last=scenes[scenes.length-1];
+  if(time<last.start+0.3){ x.save(); x.globalAlpha=Math.min(1,time/0.8,(last.start+0.3-time)/0.3); signature(x,W,H,"","photo",tour.sig); x.restore(); }
+}
+let tourBlob=null;
+async function makeTour(){
+  const mime=pickMime(), st=$("tourStatus"), btn=$("btnTour");
+  if(!mime){ st.textContent="Este navegador no puede grabar video. Probá con Chrome o Safari actualizados."; return; }
+  if(!S.photos.length){ st.textContent="Subí o traé fotos primero (paso 3)."; return; }
+  btn.disabled=true; $("btnTourSave").hidden=true; $("tourVideo").hidden=true; tourBlob=null; st.className="status";
+  const tour=buildTour($("tourFmt").value), cv=$("tourCanvas"); cv.hidden=false; cv.width=tour.W; cv.height=tour.H;
+  const x=cv.getContext("2d"); x.imageSmoothingQuality="high"; drawTourFrame(x,tour,0);
+  const stream=cv.captureStream(30), rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:tour.W>tour.H?14_000_000:10_000_000}), chunks=[];
+  rec.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+  const done=new Promise(r=>rec.onstop=r); rec.start(250);
+  const t0=performance.now();
+  await new Promise(res=>{ (function loop(){ const tm=(performance.now()-t0)/1000;
+    if(tm>=tour.total){ drawTourFrame(x,tour,tour.total-0.01); return res(); }
+    drawTourFrame(x,tour,tm); st.textContent=`Grabando el recorrido… ${Math.round(tm/tour.total*100)}% (dejá la pantalla abierta)`; requestAnimationFrame(loop); })(); });
+  rec.stop(); await done; stream.getTracks().forEach(t=>t.stop());
+  tourBlob=new Blob(chunks,{type:mime.split(";")[0]});
+  const v=$("tourVideo"); v.src=URL.createObjectURL(tourBlob); v.hidden=false; cv.hidden=true;
+  $("btnTourSave").hidden=false; btn.disabled=false;
+  st.className="status ok"; st.textContent=`Listo: ${Math.round(tour.total)} segundos.`+(mime.includes("webm")?" Quedó en formato WebM: para MP4 generalo desde Safari (iPhone o Mac).":"");
+}
+$("btnTour").onclick=()=>makeTour().catch(()=>{ $("btnTour").disabled=false; $("tourStatus").textContent="No se pudo grabar el video. Probá de nuevo."; });
+$("btnTourSave").onclick=async()=>{
+  if(!tourBlob) return; const d=data(), ext=tourBlob.type.includes("mp4")?"mp4":"webm";
+  const f=new File([tourBlob],`${slug(d.title||d.loc)}-recorrido.${ext}`,{type:tourBlob.type});
+  if(mobile&&navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f]}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+  const u=URL.createObjectURL(f), a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),8000);
+};
+
+// Recorrido 3D: un solo archivo HTML con las fotos adentro y un visor 360° (WebGL) que anda sin internet.
+function jpegOf(img,maxSide,q){
+  const iw=img.naturalWidth,ih=img.naturalHeight,s=Math.min(1,maxSide/Math.max(iw,ih)), c=canvas(Math.round(iw*s),Math.round(ih*s)), x=c.getContext("2d");
+  let src=img, k=0; while(s*Math.pow(2,k+1)<=1&&k<5) k++; if(k) src=level(img,k);
+  x.drawImage(src,0,0,c.width,c.height); return c.toDataURL("image/jpeg",q);
+}
+function tourHTML(){
+  const d=data(), t=T[d.lang], tt=TOUR_T[d.lang]||TOUR_T.es, c=content(d,t);
+  const stops=[...S.panos.map((p,i)=>({name:p.room||`${tt.space} 360° ${i+1}`,pano:true,src:jpegOf(p.img,4096,0.85)})),
+    ...S.photos.slice(0,20).map((p,i)=>({name:p.room||(i===0?c.title:`${tt.space} ${i+1}`),pano:false,stock:!!p.img._stock,src:jpegOf(p.img,2000,0.86)}))];
+  const info={title:c.title,eyebrow:c.eyebrow,price:d.price,facts:c.facts.map(f=>f[0]+" "+f[1]),cta:c.cta,brand:c.brand,handle:c.handle,accent:d.accent||"#1D4ED8",
+    logo:S.logo?jpegOf(S.logo,600,0.9):"",tt,ill:d.lang==="en"?"Illustrative image":"Imagen ilustrativa"};
+  const json=JSON.stringify({info,stops}).replace(/</g,"\\u003c");
+  return `<!doctype html><html lang="${d.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>${esc(tt.tour+" · "+c.title)}</title><style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#0d0d0f;color:#fff;font-family:"Helvetica Neue",Arial,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0}#gl,#ph,#bg{position:absolute;inset:0;width:100%;height:100%}#gl{touch-action:none;cursor:grab}
+#bg{background-size:cover;background-position:center;filter:blur(30px) brightness(.55);transform:scale(1.1)}
+#ph{object-fit:contain;animation:kb 14s ease-in-out infinite alternate}@keyframes kb{from{transform:scale(1)}to{transform:scale(1.08) translate(-1%,-1%)}}
+.top{position:fixed;left:0;right:0;top:0;padding:16px 20px 40px;background:linear-gradient(#000a,#0000);display:flex;gap:14px;align-items:center;pointer-events:none}
+.top img{max-height:40px;max-width:120px}.top .t{flex:1;min-width:0}.top small{display:block;letter-spacing:.18em;font-size:11px;opacity:.8;text-transform:uppercase}
+.top b{display:block;font-size:20px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.top .p{font-size:16px;white-space:nowrap}
+.bot{position:fixed;left:0;right:0;bottom:0;padding:40px 12px 14px;background:linear-gradient(#0000,#000b)}
+.name{text-align:center;font-size:24px;margin-bottom:4px}.hint{text-align:center;font-size:12px;opacity:.75;margin-bottom:10px;min-height:14px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 4px 4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chips button{flex:0 0 auto;width:84px;border:2px solid transparent;padding:0;background:#222;color:#fff;cursor:pointer;font:inherit}
+.chips button.on{border-color:var(--a)}.chips img{display:block;width:100%;height:52px;object-fit:cover}.chips span{display:block;font-size:11px;padding:3px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav{position:fixed;top:50%;transform:translateY(-50%);width:48px;height:48px;border:0;background:#0007;color:#fff;font-size:26px;cursor:pointer}.nav.l{left:10px}.nav.r{right:10px}
+.ib{position:fixed;right:16px;top:70px;border:1px solid #fff8;background:#0007;color:#fff;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer}
+.ill{position:fixed;right:16px;bottom:150px;font-size:12px;opacity:.85}
+#info{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;padding:20px}#info.on{display:flex}
+.card{background:#fff;color:#111;max-width:420px;width:100%;padding:26px;text-align:center}.card h2{margin:0 0 6px;font-size:22px}.card .e{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--a)}
+.card ul{list-style:none;padding:0;margin:16px 0;display:grid;grid-template-columns:1fr 1fr;gap:8px}.card li{background:#f3f4f6;padding:10px;font-size:14px}
+.card .pr{font-size:20px;font-weight:600;margin:8px 0}.card .c{font-size:15px;margin-top:14px}.card button{margin-top:16px;border:0;background:var(--a);color:#fff;padding:10px 20px;font:inherit;cursor:pointer}
+</style></head><body>
+<div id="stage"><div id="bg"></div><img id="ph" alt=""><canvas id="gl"></canvas></div>
+<div class="top"><img id="logo" alt="" hidden><div class="t"><small id="eb"></small><b id="tt"></b></div><div class="p" id="pr"></div></div>
+<button class="ib" id="ib"></button><div class="ill" id="ill" hidden></div>
+<button class="nav l" id="pv" aria-label="">‹</button><button class="nav r" id="nx" aria-label="">›</button>
+<div class="bot"><div class="name" id="nm"></div><div class="hint" id="hn"></div><div class="chips" id="ch"></div></div>
+<div id="info"><div class="card"><div class="e" id="ie"></div><h2 id="it"></h2><div class="pr" id="ip"></div><ul id="if"></ul><div id="ic"></div><div class="c" id="ih"></div><button id="ix"></button></div></div>
+<script type="application/json" id="data">${json}<\/script>
+<script>
+(function(){
+const D=JSON.parse(document.getElementById("data").textContent), I=D.info, S=D.stops, $=id=>document.getElementById(id);
+document.documentElement.style.setProperty("--a",I.accent);
+$("eb").textContent=[I.tt.tour,I.eyebrow].filter(Boolean).join(" · "); $("tt").textContent=I.title; $("pr").textContent=I.price||"";
+if(I.logo){ $("logo").src=I.logo; $("logo").hidden=false; }
+$("ib").textContent=I.tt.info+" · "+I.tt.contact; $("pv").setAttribute("aria-label",I.tt.prev); $("nx").setAttribute("aria-label",I.tt.next);
+$("ie").textContent=I.eyebrow||""; $("it").textContent=I.title; $("ip").textContent=I.price||"";
+$("if").innerHTML=I.facts.map(f=>"<li>"+f.replace(/[&<>]/g,"")+"</li>").join("");
+$("ih").textContent=[I.cta,[I.brand,I.handle].filter(Boolean).join(" · ")].filter(Boolean).join(" — ");
+if(I.logo) $("ic").innerHTML='<img src="'+I.logo+'" alt="" style="max-height:50px;max-width:160px">';
+$("ix").textContent=I.tt.close; $("ib").onclick=()=>$("info").classList.add("on"); $("ix").onclick=()=>$("info").classList.remove("on");
+// visor 360
+const cv=$("gl"), gl=cv.getContext("webgl",{antialias:false}); let tex=null, prog=null, yaw=0, pitch=0, fov=1.6, auto=true, cur=-1;
+if(gl){
+  const sh=(t,s)=>{const o=gl.createShader(t); gl.shaderSource(o,s); gl.compileShader(o); return o;};
+  prog=gl.createProgram();
+  gl.attachShader(prog,sh(gl.VERTEX_SHADER,"attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}"));
+  gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,"precision highp float;uniform sampler2D t;uniform vec2 r;uniform float y,q,f;void main(){vec2 u=(gl_FragCoord.xy/r)*2.-1.;u.x*=r.x/r.y;vec3 d=normalize(vec3(u*tan(f*.5),-1.));float cp=cos(q),sp=sin(q);d=vec3(d.x,d.y*cp-d.z*sp,d.y*sp+d.z*cp);float cy=cos(y),sy=sin(y);d=vec3(d.x*cy+d.z*sy,d.y,-d.x*sy+d.z*cy);float lo=atan(d.x,-d.z),la=asin(clamp(d.y,-1.,1.));gl_FragColor=texture2D(t,vec2(lo/6.2831853+.5,.5-la/3.1415927));}"));
+  gl.linkProgram(prog); gl.useProgram(prog);
+  const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(prog,"p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+}
+function size(){ const r=Math.min(window.devicePixelRatio||1,2); cv.width=innerWidth*r; cv.height=innerHeight*r; if(gl) gl.viewport(0,0,cv.width,cv.height); }
+addEventListener("resize",size); size();
+function draw(){ if(!gl||!tex||cv.hidden) return;
+  if(auto) yaw+=0.0012;
+  gl.uniform2f(gl.getUniformLocation(prog,"r"),cv.width,cv.height); gl.uniform1f(gl.getUniformLocation(prog,"y"),yaw);
+  gl.uniform1f(gl.getUniformLocation(prog,"q"),pitch); gl.uniform1f(gl.getUniformLocation(prog,"f"),fov*Math.min(1,cv.width/cv.height*1.2)); gl.drawArrays(gl.TRIANGLE_STRIP,0,4); }
+(function loop(){ draw(); requestAnimationFrame(loop); })();
+let drag=null, pts=new Map(), pinch=0;
+cv.addEventListener("pointerdown",e=>{ auto=false; cv.setPointerCapture(e.pointerId); pts.set(e.pointerId,[e.clientX,e.clientY]); drag=[e.clientX,e.clientY]; cv.style.cursor="grabbing"; });
+cv.addEventListener("pointermove",e=>{ if(!pts.has(e.pointerId)) return; pts.set(e.pointerId,[e.clientX,e.clientY]);
+  if(pts.size===2){ const [a,b]=[...pts.values()], dd=Math.hypot(a[0]-b[0],a[1]-b[1]); if(pinch) fov=Math.min(2.1,Math.max(0.6,fov*pinch/dd)); pinch=dd; return; }
+  if(!drag) return; const k=fov/innerHeight; yaw-=(e.clientX-drag[0])*k; pitch=Math.max(-1.45,Math.min(1.45,pitch+(e.clientY-drag[1])*k)); drag=[e.clientX,e.clientY]; });
+const up=e=>{ pts.delete(e.pointerId); if(pts.size<2) pinch=0; if(!pts.size){ drag=null; cv.style.cursor="grab"; } };
+cv.addEventListener("pointerup",up); cv.addEventListener("pointercancel",up);
+cv.addEventListener("wheel",e=>{ e.preventDefault(); fov=Math.min(2.1,Math.max(0.6,fov*(1+e.deltaY*0.001))); },{passive:false});
+function show(i){
+  i=(i+S.length)%S.length; cur=i; const s=S[i];
+  [...$("ch").children].forEach((b,k)=>b.classList.toggle("on",k===i)); $("ch").children[i].scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});
+  $("nm").textContent=s.name; $("ill").hidden=!s.stock; $("ill").textContent=I.ill;
+  if(s.pano&&gl){ $("ph").hidden=true; $("bg").style.backgroundImage="none"; cv.hidden=false; $("hn").textContent=I.tt.drag;
+    const im=new Image(); im.onload=()=>{ if(cur!==i) return; if(!tex) tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,im); yaw=0; pitch=0; fov=1.6; auto=true; }; im.src=s.src; }
+  else { cv.hidden=true; $("hn").textContent=""; const p=$("ph"); p.hidden=false; p.style.animation="none"; p.offsetWidth; p.style.animation=""; p.src=s.src; $("bg").style.backgroundImage="url("+s.src+")"; }
+}
+S.forEach((s,i)=>{ const b=document.createElement("button"); b.innerHTML='<img alt="" src="'+s.src+'"><span></span>'; b.querySelector("span").textContent=(s.pano?"360° · ":"")+s.name; b.onclick=()=>show(i); $("ch").appendChild(b); });
+$("pv").onclick=()=>show(cur-1); $("nx").onclick=()=>show(cur+1);
+addEventListener("keydown",e=>{ if(e.key==="ArrowLeft") show(cur-1); if(e.key==="ArrowRight") show(cur+1); if(e.key==="Escape") $("info").classList.remove("on"); });
+show(0);
+})();
+<\/script></body></html>`;
+}
+let tourUrl=null;
+function tourReady(){ if(!S.photos.length&&!S.panos.length){ $("tour3dStatus").className="status"; $("tour3dStatus").textContent="Sumá fotos (paso 3) o fotos 360° primero."; return false; } return true; }
+$("btnTour3d").onclick=()=>{ if(!tourReady()) return; const st=$("tour3dStatus"); st.className="status"; st.textContent="Armando el recorrido…";
+  setTimeout(()=>{ const h=tourHTML(); if(tourUrl) URL.revokeObjectURL(tourUrl); tourUrl=URL.createObjectURL(new Blob([h],{type:"text/html"}));
+    const f=$("tourFrame"); f.src=tourUrl; f.hidden=false; st.className="status ok"; st.textContent=`Así lo va a ver tu cliente (${(h.length/1048576).toFixed(1)} MB). Descargalo y mandalo por WhatsApp o mail: se abre en cualquier navegador.`; },30); };
+$("btnTour3dSave").onclick=async()=>{ if(!tourReady()) return; const st=$("tour3dStatus"); st.className="status"; st.textContent="Armando el archivo…";
+  await new Promise(r=>setTimeout(r,30));
+  const d=data(), f=new File([tourHTML()],`${slug(d.title||d.loc)}-recorrido-3d.html`,{type:"text/html"});
+  st.className="status ok"; st.textContent=`Listo: ${f.name}. Mandalo como archivo por WhatsApp o mail; tu cliente lo abre con un toque.`;
+  if(mobile&&navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f]}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+  const u=URL.createObjectURL(f), a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),8000);
+};
+renderTourRooms();
+
 /* ---------- pestañas y copiar ---------- */
 document.querySelectorAll("[role=tab]").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("[role=tab]").forEach(o=>o.setAttribute("aria-selected",o===b));
-  ["feed","stories","reel","copy","check"].forEach(k=>$("tab-"+k).hidden=k!==b.dataset.tab);
+  ["feed","stories","reel","tour","copy","check"].forEach(k=>$("tab-"+k).hidden=k!==b.dataset.tab);
 });
 document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>{
   const el=$(b.dataset.copy), txt=el.textContent;
