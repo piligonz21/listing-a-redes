@@ -92,16 +92,17 @@ function candidates(u) {
   if (/[?&](w|width)=\d{2,4}\b/i.test(u)) out.push(u.replace(/([?&](?:w|width)=)\d+/i, "$12000").replace(/([?&](?:h|height)=)\d+&?/i, ""));
   return [...new Set(out)].filter(x => x !== u);
 }
-async function isImage(t) {
+async function isImage(t, ms) {
   try {
-    const r = await fetch(t, { method: "HEAD", headers: { "User-Agent": UA }, signal: AbortSignal.timeout(3000) });
+    const r = await fetch(t, { method: "HEAD", headers: { "User-Agent": UA }, signal: AbortSignal.timeout(ms) });
     return r.ok && (r.headers.get("content-type") || "").startsWith("image/");
   } catch (e) { return false; }
 }
-async function upgrade(u) {
-  const tries = candidates(u).slice(0, 10);
-  if (!tries.length) return u;
-  const ok = await Promise.all(tries.map(isImage));
+const withTimeout = (p, ms, fallback) => Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
+async function upgrade(u, ms) {
+  const tries = candidates(u).slice(0, 6);
+  if (!tries.length || ms < 500) return u;
+  const ok = await Promise.all(tries.map(t => isImage(t, ms)));
   const i = ok.indexOf(true);
   return i > -1 ? tries[i] : u;
 }
@@ -127,11 +128,11 @@ function looksUseful(h) {
   return imgs >= 3 && text(h).length > 400;
 }
 // Lector externo gratuito (r.jina.ai) que abre la página en un navegador real y devuelve el HTML ya armado.
-async function reader(url) {
+async function reader(url, ms) {
   try {
-    const h = { "X-Return-Format": "html", "X-Timeout": "12", Accept: "text/html" };
+    const h = { "X-Return-Format": "html", "X-Timeout": String(Math.max(3, Math.floor(ms / 1000) - 1)), Accept: "text/html" };
     if (process.env.JINA_API_KEY) h.Authorization = "Bearer " + process.env.JINA_API_KEY;
-    const r = await fetch("https://r.jina.ai/" + url, { headers: h, signal: AbortSignal.timeout(16000) });
+    const r = await fetch("https://r.jina.ai/" + url, { headers: h, signal: AbortSignal.timeout(ms) });
     if (!r.ok) return "";
     return await r.text();
   } catch (e) { return ""; }
@@ -145,25 +146,37 @@ module.exports = async (req, res) => {
   const url = (req.query && req.query.url) || "";
   res.setHeader("Cache-Control", "s-maxage=600");
   if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "Pegá un link que empiece con http:// o https://" });
+  // Netlify corta la función a los 10 segundos: todo tiene que entrar en ese tiempo.
+  const t0 = Date.now(), left = () => 9300 - (Date.now() - t0);
   let html = "", status = 0;
   try {
-    const r = await fetch(url, { headers: HEADERS, redirect: "follow", signal: AbortSignal.timeout(8000) });
+    const r = await fetch(url, { headers: HEADERS, redirect: "follow", signal: AbortSignal.timeout(5000) });
     status = r.status;
     if (r.ok) html = await r.text();
   } catch (e) {}
-  const blockedPage = h => !h || (/captcha|cf-chl|Attention Required|Just a moment|Access denied|Pardon Our Interruption|px-captcha/i.test(h) && h.length < 80000);
+  const log = { url: url.slice(0, 120), direct: status, directLen: html.length };
+  // Solo cuenta como bloqueo una página de verificación anti-robots (no un formulario de contacto con reCAPTCHA).
+  const blockedPage = h => {
+    if (!h) return true;
+    const title = ((h.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || "").trim();
+    if (/just a moment|attention required|access denied|pardon our interruption|un momento|verificaci[oó]n|are you a robot|security check/i.test(title)) return true;
+    return h.length < 60000 && /cf-chl-|challenge-platform|px-captcha|captcha-delivery\.com|_Incapsula_Resource|geo\.captcha/i.test(h) && !/og:title|application\/ld\+json/i.test(h);
+  };
   // Si el sitio bloquea o arma la página con JavaScript, la pedimos a un lector que abre la página como un navegador.
-  if (blockedPage(html) || !looksUseful(html)) {
-    const alt = await reader(url);
-    if (alt && !blockedPage(alt) && (looksUseful(alt) || blockedPage(html))) html = alt;
+  if ((blockedPage(html) || !looksUseful(html)) && left() > 3000) {
+    const alt = await reader(url, left() - 1800);
+    log.readerLen = alt.length; log.readerBlocked = blockedPage(alt);
+    if (alt && !blockedPage(alt) && (looksUseful(alt) || blockedPage(html))) { html = alt; log.used = "reader"; }
   }
   // Último intento para portales con bloqueo fuerte (ej. Argenprop): servicio de scraping, solo si hay SCRAPERAPI_KEY.
-  if ((blockedPage(html) || !looksUseful(html)) && process.env.SCRAPERAPI_KEY) {
+  if ((blockedPage(html) || !looksUseful(html)) && process.env.SCRAPERAPI_KEY && left() > 3000) {
     try {
-      const r = await fetch(`https://api.scraperapi.com/?api_key=${encodeURIComponent(process.env.SCRAPERAPI_KEY)}&country_code=ar&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(25000) });
+      const r = await fetch(`https://api.scraperapi.com/?api_key=${encodeURIComponent(process.env.SCRAPERAPI_KEY)}&country_code=ar&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(left() - 1500) });
       if (r.ok) { const alt = await r.text(); if (!blockedPage(alt)) html = alt; }
     } catch (e) {}
   }
+  log.ms = Date.now() - t0; log.blocked = blockedPage(html); log.useful = looksUseful(html);
+  console.log("extract", JSON.stringify(log));
   if (!html) return res.status(200).json({ blocked: true, status, error: status ? `El sitio no dejó leer el aviso (código ${status}). Pegá el texto y subí las fotos a mano.` : "No pude conectarme con el sitio. Pegá el texto y subí las fotos a mano." });
   if (blockedPage(html))
     return res.status(200).json({ blocked: true, error: "El sitio pidió verificación anti-robots (pasa en algunos portales grandes). Probá con el aviso en la web de la inmobiliaria o pegá el texto." });
@@ -193,11 +206,12 @@ module.exports = async (req, res) => {
     bathrooms: num(/(\d+)\s*baños?/i, t),
     parking: num(/(\d+)\s*(?:cocheras?|garages?)/i, t),
     op: /alquiler\s+temporario/i.test(t) ? "temporario" : /\balquiler\b/i.test(title + " " + description) ? "alquiler" : "venta",
-    images: await Promise.all(images(html, url, ld).map(upgrade)),
+    images: await withTimeout(Promise.all(images(html, url, ld).map(u => upgrade(u, Math.min(2500, left() - 300)))), Math.max(0, left() - 200), images(html, url, ld)),
     source: url
   };
   const labels = { title: "Titular", location: "Barrio y ciudad", price: "Precio", m2: "m² cubiertos", lot: "m² terreno", rooms: "Ambientes", bedrooms: "Dormitorios", bathrooms: "Baños", parking: "Cocheras" };
   data.missing = Object.keys(labels).filter(k => !data[k]).map(k => labels[k]);
   if (!data.images.length) data.missing.push("Fotos");
+  console.log("extract-result", JSON.stringify({ images: data.images.length, missing: data.missing }));
   res.status(200).json(data);
 };
