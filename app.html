@@ -94,6 +94,9 @@ figcaption button{padding:4px 9px;font-size:12px}
 .pick .door{position:absolute;transform:translate(-50%,-50%) rotate(-90deg);width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.75);color:#1D4ED8;font-size:16px;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .pick .door.set{background:#1D4ED8;color:#fff}
 .room input{font-size:14px;padding:8px}
+.room .mvr{display:flex;gap:6px;flex-wrap:wrap}.room .mvr button{font-size:13px;padding:4px 8px}
+.room.drag{opacity:.4}.room.over{outline:2px dashed #1D4ED8;outline-offset:2px}
+.pick .ord{position:absolute;left:6px;top:6px;background:#111;color:#fff;font-size:12px;font-weight:700;padding:2px 7px;pointer-events:none}
 .room .rx{align-self:flex-start;font-size:13px;padding:4px 10px}
 .reelbox .tourmedia{max-width:100%;aspect-ratio:auto}
 #tourFrame{display:block;width:100%;height:560px;border:1px solid var(--line);margin-top:12px;background:#111}
@@ -223,7 +226,7 @@ figcaption button{padding:4px 9px;font-size:12px}
         <div id="tab-tour" hidden>
           <div class="reelbox">
             <h2 style="margin:0 0 6px">Recorrido de la propiedad</h2>
-            <p class="hint" style="margin:0 0 12px">Para mandarle a tus clientes por WhatsApp o mail. Usa las fotos del paso 3 en el mismo orden (ordenalas como se recorre la casa: entrada, living, cocina…). Poné el nombre de cada ambiente y <b>tocá en cada foto dónde está la puerta o el paso al ambiente siguiente</b>: ahí va la flecha para caminar, como en Street View.</p>
+            <p class="hint" style="margin:0 0 12px">Para mandarle a tus clientes por WhatsApp o mail. <b>Ordená las fotos como se recorre la casa en la vida real</b> (entrada, living, cocina…) con los botones Antes / Después, o arrastrándolas en la compu. Este orden es solo del recorrido: no cambia el carrusel. Poné el nombre de cada ambiente y <b>tocá en cada foto dónde está la puerta o el paso al ambiente siguiente</b>: ahí va la flecha para caminar, como en Street View.</p>
             <datalist id="roomNames"><option>Fachada</option><option>Entrada</option><option>Living</option><option>Comedor</option><option>Living comedor</option><option>Cocina</option><option>Dormitorio principal</option><option>Dormitorio</option><option>Baño</option><option>Toilette</option><option>Vestidor</option><option>Escritorio</option><option>Lavadero</option><option>Balcón</option><option>Terraza</option><option>Jardín</option><option>Pileta</option><option>Quincho</option><option>Galería</option><option>Cochera</option><option>Vista</option><option>Amenities</option></datalist>
             <div id="tourRooms" class="rooms"></div>
           </div>
@@ -231,7 +234,7 @@ figcaption button{padding:4px 9px;font-size:12px}
             <h2 style="margin:0 0 6px">1 · Recorrido interactivo (estilo Street View)</h2>
             <p class="hint" style="margin:0 0 12px">Tu cliente toca y recorre la casa: arrastra para mirar alrededor y toca la flecha para caminar al ambiente siguiente. Es un archivo que abre en el celu o la compu, sin instalar nada. Con fotos 360° puede girar y mirar para todos lados; las fotos comunes se ven con movimiento suave.</p>
             <div class="row"><button id="panoAdd">Sumar fotos 360°</button><input id="panoInput" type="file" accept="image/*" multiple hidden></div>
-            <div id="panoList" class="rooms" style="margin-top:10px"></div>
+            <p class="hint" style="margin:8px 0 0">Las fotos 360° aparecen arriba, en la lista de ambientes, para que las ubiques en el orden que quieras.</p>
             <details class="pexels" style="margin-top:10px"><summary>¿Cómo saco fotos 360°?</summary>
               <ul class="check" style="margin-top:8px">
                 <li><b>Con una cámara 360°</b> (Insta360, Ricoh Theta): es lo mejor. Exportá la foto “equirectangular” (JPG, el doble de ancha que de alta).</li>
@@ -1008,27 +1011,43 @@ function doorPicker(p,i,alt,cls){
   w.querySelector("img").onclick=e=>{ const r=e.target.getBoundingClientRect(); p.door={u:Math.min(.97,Math.max(.03,(e.clientX-r.left)/r.width)),v:Math.min(.95,Math.max(.05,(e.clientY-r.top)/r.height))}; put(); };
   put(); return w;
 }
+// Orden del recorrido: propio, aparte del orden del carrusel. Fotos 360° y comunes en una sola lista.
+S.tourOrder=[];
+function tourSeq(){
+  const live=[...S.panos.map(p=>({p,pano:true})),...S.photos.slice(0,20).map(p=>({p,pano:false}))];
+  const has=new Set(live.map(o=>o.p));
+  S.tourOrder=S.tourOrder.filter(o=>has.has(o.p));
+  const known=new Set(S.tourOrder.map(o=>o.p));
+  live.forEach(o=>{ if(!known.has(o.p)) S.tourOrder.push(o); });
+  return S.tourOrder;
+}
+function moveTour(i,j){ const a=tourSeq(); if(j<0||j>=a.length||i===j) return; const [o]=a.splice(i,1); a.splice(j,0,o); renderTourRooms(); }
 function renderTourRooms(){
   const box=$("tourRooms"); if(!box) return; box.innerHTML="";
-  if(!S.photos.length){ box.innerHTML='<p class="hint">Primero sumá fotos en el paso 3.</p>'; return; }
-  S.photos.forEach((p,i)=>{
-    const d=document.createElement("div"); d.className="room";
-    d.appendChild(doorPicker(p,i,`Foto ${i+1}`));
-    const inp=document.createElement("input"); inp.setAttribute("list","roomNames"); inp.placeholder=i===0?"Ej: Fachada":"Ej: Living"; inp.value=p.room||""; inp.setAttribute("aria-label",`Ambiente de la foto ${i+1}`);
-    inp.oninput=e=>{ p.room=e.target.value.trim(); }; d.appendChild(inp); box.appendChild(d);
-  });
-}
-function renderPanos(){
-  const box=$("panoList"); box.innerHTML="";
-  S.panos.forEach((p,i)=>{
-    const d=document.createElement("div"); d.className="room";
-    d.appendChild(doorPicker(p,i,`Foto 360 ${i+1}`,"pano"));
-    d.insertAdjacentHTML("beforeend",`<input list="roomNames" placeholder="Ej: Living" value="${esc(p.room)}" aria-label="Ambiente de la foto 360 ${i+1}"><button class="rx" type="button">Quitar</button>`);
-    d.querySelector("input").oninput=e=>{ p.room=e.target.value.trim(); };
-    d.querySelector(".rx").onclick=()=>{ S.panos.splice(i,1); renderPanos(); };
+  const seq=tourSeq();
+  if(!seq.length){ box.innerHTML='<p class="hint">Primero sumá fotos en el paso 3.</p>'; return; }
+  seq.forEach((o,i)=>{
+    const p=o.p, d=document.createElement("div"); d.className="room"; d.draggable=true;
+    const pk=doorPicker(p,i,o.pano?`Foto 360 de la parada ${i+1}`:`Foto de la parada ${i+1}`,o.pano?"pano":"");
+    pk.insertAdjacentHTML("beforeend",`<span class="ord">${i+1}${o.pano?" · 360°":""}</span>`);
+    d.appendChild(pk);
+    const inp=document.createElement("input"); inp.setAttribute("list","roomNames"); inp.placeholder=i===0?"Ej: Fachada":"Ej: Living"; inp.value=p.room||""; inp.setAttribute("aria-label",`Ambiente de la parada ${i+1}`);
+    inp.oninput=e=>{ p.room=e.target.value.trim(); }; d.appendChild(inp);
+    const bar=document.createElement("div"); bar.className="mvr";
+    bar.innerHTML=`<button type="button" aria-label="Mover antes" ${i===0?"disabled":""}>‹ Antes</button><button type="button" aria-label="Mover después" ${i===seq.length-1?"disabled":""}>Después ›</button>${o.pano?'<button type="button" class="rx">Quitar</button>':""}`;
+    const bs=bar.querySelectorAll("button"); bs[0].onclick=()=>moveTour(i,i-1); bs[1].onclick=()=>moveTour(i,i+1);
+    if(o.pano) bar.querySelector(".rx").onclick=()=>{ S.panos.splice(S.panos.indexOf(p),1); renderTourRooms(); };
+    d.appendChild(bar);
+    // en la compu también se puede arrastrar
+    d.ondragstart=e=>{ if(e.target.tagName==="INPUT"){ e.preventDefault(); return; } e.dataTransfer.setData("text/plain",String(i)); d.classList.add("drag"); };
+    d.ondragend=()=>d.classList.remove("drag");
+    d.ondragover=e=>{ e.preventDefault(); d.classList.add("over"); };
+    d.ondragleave=()=>d.classList.remove("over");
+    d.ondrop=e=>{ e.preventDefault(); d.classList.remove("over"); const from=parseInt(e.dataTransfer.getData("text/plain"),10); if(from>=0) moveTour(from,i); };
     box.appendChild(d);
   });
 }
+function renderPanos(){ renderTourRooms(); }
 $("panoAdd").onclick=()=>$("panoInput").click();
 $("panoInput").onchange=async e=>{
   const st=$("tour3dStatus"); let bad=0;
@@ -1041,7 +1060,7 @@ $("panoInput").onchange=async e=>{
 function buildTour(fmt){
   const d=data(), t=T[d.lang], tt=TOUR_T[d.lang]||TOUR_T.es, c=content(d,t), th=REEL_THEME[S.style]||REEL_THEME.oscuro;
   const W=fmt==="v"?1080:1920, H=fmt==="v"?1920:1080, U=Math.min(W,H), wide=W>H;
-  const ph=S.photos.slice(0,14), n=ph.length, scenes=[];
+  const ph=tourSeq().filter(o=>!o.pano).map(o=>o.p).slice(0,14), n=ph.length, scenes=[];
   const shade=(x,a)=>{ const g=x.createLinearGradient(0,H*0.45,0,H); g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,`rgba(0,0,0,${0.72*a})`); x.fillStyle=g; x.fillRect(0,H*0.45,W,H*0.55); };
   // cámara: avanza hacia adentro de la foto y se desplaza de costado, como caminando
   const cam=(x,img,p,i,boost=0)=>{
@@ -1166,7 +1185,7 @@ async function fullJpeg(img){
 const blobURL=b=>new Promise(r=>{ const f=new FileReader(); f.onload=()=>r(f.result); f.readAsDataURL(b); });
 async function tourPack(onStep){
   const d=data(), t=T[d.lang], tt=TOUR_T[d.lang]||TOUR_T.es, c=content(d,t);
-  const all=[...S.panos.map((p,i)=>({p,pano:true,name:p.room||`${tt.space} 360° ${i+1}`})),...S.photos.slice(0,20).map((p,i)=>({p,pano:false,name:p.room||(i===0?c.title:`${tt.space} ${i+1}`)}))];
+  const all=tourSeq().map((o,i)=>({p:o.p,pano:o.pano,name:o.p.room||(i===0&&!o.pano?c.title:`${tt.space}${o.pano?" 360°":""} ${i+1}`)}));
   const stops=[];
   for(let k=0;k<all.length;k++){ const o=all[k]; onStep&&onStep(k,all.length);
     stops.push({name:o.name,pano:o.pano,stock:!!o.p.img._stock,door:o.p.door||{u:.5,v:.62},w:o.p.img.naturalWidth,h:o.p.img.naturalHeight,
