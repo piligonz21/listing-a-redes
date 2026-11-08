@@ -228,17 +228,8 @@ figcaption button{padding:4px 9px;font-size:12px}
             <div id="tourRooms" class="rooms"></div>
           </div>
           <div class="reelbox" style="margin-top:16px">
-            <h2 style="margin:0 0 6px">1 · Video recorrido</h2>
-            <p class="hint" style="margin:0 0 12px">Un video con movimiento de cámara, como si caminaras por la propiedad: presentación, cada ambiente con su nombre, datos clave y contacto. Se graba en tiempo real: dejá la pantalla abierta.</p>
-            <div class="row"><select id="tourFmt" style="max-width:300px"><option value="h">Horizontal 16:9 (WhatsApp, mail, YouTube)</option><option value="v">Vertical 9:16 (celular, historias)</option></select>
-              <button id="btnTour" class="primary">Generar video</button><button id="btnTourSave" hidden>Descargar video</button></div>
-            <div id="tourStatus" class="status" role="status" style="margin-top:8px"></div>
-            <canvas id="tourCanvas" class="tourmedia" hidden></canvas>
-            <video id="tourVideo" class="tourmedia" controls playsinline hidden></video>
-          </div>
-          <div class="reelbox" style="margin-top:16px">
-            <h2 style="margin:0 0 6px">2 · Recorrido 3D interactivo</h2>
-            <p class="hint" style="margin:0 0 12px">Un archivo que tu cliente abre en el celu o la compu (sin instalar nada) y recorre ambiente por ambiente. Con fotos 360° puede girar y mirar para todos lados; las fotos comunes se ven con movimiento suave.</p>
+            <h2 style="margin:0 0 6px">1 · Recorrido interactivo (estilo Street View)</h2>
+            <p class="hint" style="margin:0 0 12px">Tu cliente toca y recorre la casa: arrastra para mirar alrededor y toca la flecha para caminar al ambiente siguiente. Es un archivo que abre en el celu o la compu, sin instalar nada. Con fotos 360° puede girar y mirar para todos lados; las fotos comunes se ven con movimiento suave.</p>
             <div class="row"><button id="panoAdd">Sumar fotos 360°</button><input id="panoInput" type="file" accept="image/*" multiple hidden></div>
             <div id="panoList" class="rooms" style="margin-top:10px"></div>
             <details class="pexels" style="margin-top:10px"><summary>¿Cómo saco fotos 360°?</summary>
@@ -249,9 +240,18 @@ figcaption button{padding:4px 9px;font-size:12px}
                 <li>Sin fotos 360° también funciona: el recorrido usa las fotos comunes.</li>
               </ul>
             </details>
-            <div class="row" style="margin-top:12px"><button id="btnTour3d" class="primary">Ver recorrido</button><button id="btnTour3dSave">Descargar recorrido</button></div>
+            <div class="row" style="margin-top:12px"><button id="btnTour3d" class="primary">Ver y probar el recorrido</button><button id="btnTour3dSave">Descargar recorrido</button></div>
             <div id="tour3dStatus" class="status" role="status" style="margin-top:8px"></div>
             <iframe id="tourFrame" title="Vista previa del recorrido" hidden></iframe>
+          </div>
+          <div class="reelbox" style="margin-top:16px">
+            <h2 style="margin:0 0 6px">2 · Video del recorrido (para ver, no interactivo)</h2>
+            <p class="hint" style="margin:0 0 12px">Un video con movimiento de cámara, como si caminaras por la propiedad: presentación, cada ambiente con su nombre, datos clave y contacto. Se graba en tiempo real: dejá la pantalla abierta.</p>
+            <div class="row"><select id="tourFmt" style="max-width:300px"><option value="h">Horizontal 16:9 (WhatsApp, mail, YouTube)</option><option value="v">Vertical 9:16 (celular, historias)</option></select>
+              <button id="btnTour" class="primary">Generar video</button><button id="btnTourSave" hidden>Descargar video</button></div>
+            <div id="tourStatus" class="status" role="status" style="margin-top:8px"></div>
+            <canvas id="tourCanvas" class="tourmedia" hidden></canvas>
+            <video id="tourVideo" class="tourmedia" controls playsinline hidden></video>
           </div>
         </div>
         <div id="tab-copy" hidden>
