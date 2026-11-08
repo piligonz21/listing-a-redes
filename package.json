@@ -1,1 +1,1 @@
-{ "name": "listing-a-redes", "private": true, "version": "1.0.0", "engines": { "node": ">=18" } }
+{ "name": "listing-a-redes", "private": true, "version": "1.0.0", "engines": { "node": ">=18" }, "dependencies": { "@netlify/blobs": "10.7.13" } }

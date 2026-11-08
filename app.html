@@ -240,7 +240,8 @@ figcaption button{padding:4px 9px;font-size:12px}
                 <li>Sin fotos 360° también funciona: el recorrido usa las fotos comunes.</li>
               </ul>
             </details>
-            <div class="row" style="margin-top:12px"><button id="btnTour3d" class="primary">Ver y probar el recorrido</button><button id="btnTour3dSave">Descargar recorrido</button></div>
+            <div class="row" style="margin-top:12px"><button id="btnTour3d">Ver y probar el recorrido</button><button id="btnTourShare" class="primary">Copiar link para compartir</button><button id="btnTour3dSave">Descargar archivo</button></div>
+            <div id="tourLinkBox" class="row" style="margin-top:10px;flex-wrap:nowrap" hidden><input id="tourLink" type="url" readonly aria-label="Link del recorrido"><button id="tourLinkCopy">Copiar</button></div>
             <div id="tour3dStatus" class="status" role="status" style="margin-top:8px"></div>
             <iframe id="tourFrame" title="Vista previa del recorrido" hidden></iframe>
           </div>
@@ -1150,16 +1151,35 @@ function jpegOf(img,maxSide,q){
   let src=img, k=0; while(s*Math.pow(2,k+1)<=1&&k<5) k++; if(k) src=level(img,k);
   x.drawImage(src,0,0,c.width,c.height); return c.toDataURL("image/jpeg",q);
 }
-function tourHTML(){
+// Fotos del recorrido en su resolución original (JPG de alta calidad). Solo si una pesa más de 4 MB se baja la calidad,
+// y recién como último recurso el tamaño, porque el link compartido sirve cada foto por separado.
+function jpegBlob(c,q){ return new Promise(r=>c.toBlob(r,"image/jpeg",q)); }
+async function fullJpeg(img){
+  let w=img.naturalWidth,h=img.naturalHeight;
+  for(let tries=0;tries<4;tries++){
+    const c=canvas(w,h), x=c.getContext("2d"); x.drawImage(img,0,0,w,h);
+    for(const q of [0.92,0.88,0.82,0.76]){ const b=await jpegBlob(c,q); if(b&&b.size<=4_000_000) return b; }
+    w=Math.round(w*0.85); h=Math.round(h*0.85);
+  }
+  const c=canvas(w,h); c.getContext("2d").drawImage(img,0,0,w,h); return jpegBlob(c,0.7);
+}
+const blobURL=b=>new Promise(r=>{ const f=new FileReader(); f.onload=()=>r(f.result); f.readAsDataURL(b); });
+async function tourPack(onStep){
   const d=data(), t=T[d.lang], tt=TOUR_T[d.lang]||TOUR_T.es, c=content(d,t);
   const all=[...S.panos.map((p,i)=>({p,pano:true,name:p.room||`${tt.space} 360° ${i+1}`})),...S.photos.slice(0,20).map((p,i)=>({p,pano:false,name:p.room||(i===0?c.title:`${tt.space} ${i+1}`)}))];
-  const stops=all.map(o=>({name:o.name,pano:o.pano,stock:!!o.p.img._stock,door:o.p.door||{u:.5,v:.62},
-    w:o.p.img.naturalWidth,h:o.p.img.naturalHeight,src:jpegOf(o.p.img,o.pano?4096:2400,0.86)}));
+  const stops=[];
+  for(let k=0;k<all.length;k++){ const o=all[k]; onStep&&onStep(k,all.length);
+    stops.push({name:o.name,pano:o.pano,stock:!!o.p.img._stock,door:o.p.door||{u:.5,v:.62},w:o.p.img.naturalWidth,h:o.p.img.naturalHeight,
+      th:jpegOf(o.p.img,200,0.8),blob:await fullJpeg(o.p.img)}); }
   const info={title:c.title,eyebrow:c.eyebrow,price:d.price,facts:c.facts.map(f=>f[0]+" "+f[1]),cta:c.cta,brand:c.brand,handle:c.handle,accent:d.accent||"#1D4ED8",
     logo:S.logo?jpegOf(S.logo,600,0.9):"",tt,ill:d.lang==="en"?"Illustrative image":"Imagen ilustrativa",go:d.lang==="en"?"Go to":"Ir a",start:d.lang==="en"?"Back to start":"Volver al inicio"};
+  return {info,stops,lang:d.lang,pageTitle:tt.tour+" · "+c.title,file:slug(d.title||d.loc)};
+}
+function tourHTML(pack){
+  const {info,lang}=pack, stops=pack.stops.map(({blob,...s})=>s), d={lang}, c={title:pack.pageTitle}, tt={tour:""};
   const json=JSON.stringify({info,stops}).replace(/</g,"\\u003c");
   return `<!doctype html><html lang="${d.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>${esc(tt.tour+" · "+c.title)}</title><style>
+<title>${esc(pack.pageTitle)}</title><style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#0d0d0f;color:#fff;font-family:"Helvetica Neue",Arial,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
 #gl{position:fixed;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none}
@@ -1251,7 +1271,11 @@ cv.addEventListener("pointermove",e=>{ if(!pts.has(e.pointerId)) return; pts.set
 const up=e=>{ pts.delete(e.pointerId); if(pts.size<2) pinch=0; if(!pts.size){ dragging=false; last=null; cv.style.cursor="grab"; } };
 cv.addEventListener("pointerup",up); cv.addEventListener("pointercancel",up);
 cv.addEventListener("wheel",e=>{ e.preventDefault(); idle=0; fov*=1+e.deltaY*0.001; clamp(); },{passive:false});
-function load(i,cb){ const s=S[i], im=new Image(); im.onload=()=>{ gl.bindTexture(gl.TEXTURE_2D,tex); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,im); cb(); }; im.src=s.src; }
+const MAXT=gl.getParameter(gl.MAX_TEXTURE_SIZE)||4096, cache={};
+function img(i){ if(!cache[i]){ cache[i]=new Promise(r=>{ const im=new Image(); im.onload=()=>r(im); im.onerror=()=>r(null); im.src=S[i].src; }); } return cache[i]; }
+function load(i,cb){ img(i).then(im=>{ if(!im) return cb(); let src=im; const m=Math.max(im.naturalWidth,im.naturalHeight);
+  if(m>MAXT){ const k=MAXT/m, c=document.createElement("canvas"); c.width=Math.round(im.naturalWidth*k); c.height=Math.round(im.naturalHeight*k); const x=c.getContext("2d"); x.imageSmoothingQuality="high"; x.drawImage(im,0,0,c.width,c.height); src=c; }
+  gl.bindTexture(gl.TEXTURE_2D,tex); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,src); cb(); img((i+1)%S.length); }); }
 function enter(i,walk){
   i=(i+S.length)%S.length; const s=S[i]; s.tv=s.pano?1:HF*s.h/s.w; s.D=dirOf(s,s.door.u,s.door.v);
   load(i,()=>{ cur=i; st=s; idle=0; yaw=0; pitch=0; fit(); fov=s.pano?1.5:st.base;
@@ -1266,7 +1290,7 @@ function walk(to){ if(anim||!st) return; const a=aimOf(st.D);
   anim={t0:performance.now(),ms:850,y0:yaw,y1:tgt.yaw,p0:pitch,p1:tgt.pitch*0.6,f0:fov,f1:fov*0.42,o0:0,o1:1,done:()=>enter(to,true)}; }
 $("go").onclick=()=>walk(cur+1);
 $("pv").onclick=()=>{ if(anim) return; anim={t0:performance.now(),ms:350,y0:yaw,y1:yaw,p0:pitch,p1:pitch,f0:fov,f1:fov*1.15,o0:0,o1:1,done:()=>enter(cur-1,false)}; };
-S.forEach((s,i)=>{ const bt=document.createElement("button"); bt.innerHTML='<img alt="" src="'+s.src+'"><span></span>'; bt.querySelector("span").textContent=(s.pano?"360° · ":"")+s.name;
+S.forEach((s,i)=>{ const bt=document.createElement("button"); bt.innerHTML='<img alt="" src="'+s.th+'"><span></span>'; bt.querySelector("span").textContent=(s.pano?"360° · ":"")+s.name;
   bt.onclick=()=>{ if(anim||i===cur) return; anim={t0:performance.now(),ms:350,y0:yaw,y1:yaw,p0:pitch,p1:pitch,f0:fov,f1:fov*0.85,o0:0,o1:1,done:()=>enter(i,true)}; }; $("ch").appendChild(bt); });
 addEventListener("keydown",e=>{ if(e.key==="ArrowRight"||e.key==="ArrowUp") walk(cur+1); if(e.key==="ArrowLeft") $("pv").onclick(); if(e.key==="Escape") $("info").classList.remove("on"); });
 addEventListener("resize",size); size(); $("fade").style.opacity=1; enter(0,false); requestAnimationFrame(draw);
@@ -1275,16 +1299,35 @@ addEventListener("resize",size); size(); $("fade").style.opacity=1; enter(0,fals
 }
 let tourUrl=null;
 function tourReady(){ if(!S.photos.length&&!S.panos.length){ $("tour3dStatus").className="status"; $("tour3dStatus").textContent="Sumá fotos (paso 3) o fotos 360° primero."; return false; } return true; }
-$("btnTour3d").onclick=()=>{ if(!tourReady()) return; const st=$("tour3dStatus"); st.className="status"; st.textContent="Armando el recorrido…";
-  setTimeout(()=>{ const h=tourHTML(); if(tourUrl) URL.revokeObjectURL(tourUrl); tourUrl=URL.createObjectURL(new Blob([h],{type:"text/html"}));
-    const f=$("tourFrame"); f.src=tourUrl; f.hidden=false; st.className="status ok"; st.textContent=`Así lo va a ver tu cliente (${(h.length/1048576).toFixed(1)} MB). Descargalo y mandalo por WhatsApp o mail: se abre en cualquier navegador.`; },30); };
-$("btnTour3dSave").onclick=async()=>{ if(!tourReady()) return; const st=$("tour3dStatus"); st.className="status"; st.textContent="Armando el archivo…";
-  await new Promise(r=>setTimeout(r,30));
-  const d=data(), f=new File([tourHTML()],`${slug(d.title||d.loc)}-recorrido-3d.html`,{type:"text/html"});
-  st.className="status ok"; st.textContent=`Listo: ${f.name}. Mandalo como archivo por WhatsApp o mail; tu cliente lo abre con un toque.`;
-  if(mobile&&navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f]}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
-  const u=URL.createObjectURL(f), a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),8000);
-};
+const stepMsg=(k,n)=>{ $("tour3dStatus").className="status"; $("tour3dStatus").textContent=`Preparando las fotos en alta resolución… ${k+1} de ${n}`; };
+async function tourFileHTML(){ const pack=await tourPack(stepMsg); for(const s of pack.stops) s.src=await blobURL(s.blob); return {html:tourHTML(pack),pack}; }
+function busy(on){ ["btnTour3d","btnTour3dSave","btnTourShare"].forEach(id=>$(id).disabled=on); }
+$("btnTour3d").onclick=async()=>{ if(!tourReady()) return; busy(true); const st=$("tour3dStatus");
+  try{ const {html}=await tourFileHTML(); if(tourUrl) URL.revokeObjectURL(tourUrl); tourUrl=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+    const f=$("tourFrame"); f.src=tourUrl; f.hidden=false; st.className="status ok"; st.textContent="Así lo va a ver tu cliente. Probá arrastrar y tocar la flecha. Para mandarlo: “Copiar link para compartir”."; }
+  catch(e){ st.textContent="No se pudo armar el recorrido. Probá de nuevo."; } finally{ busy(false); } };
+$("btnTour3dSave").onclick=async()=>{ if(!tourReady()) return; busy(true); const st=$("tour3dStatus");
+  try{ const {html,pack}=await tourFileHTML(); const f=new File([html],`${pack.file}-recorrido-3d.html`,{type:"text/html"});
+    st.className="status ok"; st.textContent=`Listo: ${f.name} (${(f.size/1048576).toFixed(1)} MB, fotos en resolución original). Se abre en cualquier navegador, sin la app.`;
+    if(mobile&&navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f]}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+    const u=URL.createObjectURL(f), a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),8000);
+  }catch(e){ st.textContent="No se pudo armar el archivo. Probá de nuevo."; } finally{ busy(false); } };
+// Link para compartir: sube las fotos y la página a la web, y queda en /t/<código>. Quien lo abre ve solo el recorrido, no la app.
+$("btnTourShare").onclick=async()=>{ if(!tourReady()) return; busy(true); const st=$("tour3dStatus");
+  try{
+    const id=[...crypto.getRandomValues(new Uint8Array(12))].map(b=>"abcdefghijklmnopqrstuvwxyz0123456789"[b%36]).join("")+Date.now().toString(36).slice(-4);
+    const pack=await tourPack(stepMsg);
+    const up=async(qs,body,type)=>{ for(let t=0;t<3;t++){ try{ const r=await fetch(`/api/tour-upload?id=${id}&${qs}`,{method:"POST",headers:{"Content-Type":type},body});
+        if(r.status===401){ location.href="/"; throw new Error("auth"); } if(r.ok) return; }catch(e){ if(e.message==="auth") throw e; } await new Promise(r=>setTimeout(r,800*(t+1))); } throw new Error("upload"); };
+    for(let k=0;k<pack.stops.length;k++){ st.textContent=`Subiendo fotos en alta resolución… ${k+1} de ${pack.stops.length}`; await up(`kind=img&k=${k}`,pack.stops[k].blob,"image/jpeg"); pack.stops[k].src=`/t/${id}/img/${k}`; }
+    st.textContent="Publicando el recorrido…"; await up("kind=page",tourHTML(pack),"text/html; charset=utf-8");
+    const link=`${location.origin}/t/${id}`; $("tourLink").value=link; $("tourLinkBox").hidden=false;
+    try{ await navigator.clipboard.writeText(link); st.className="status ok"; st.textContent="Link copiado. Pegalo en WhatsApp o mail: tu cliente ve solo el recorrido, sin acceso a la app."; }
+    catch(e){ st.className="status ok"; st.textContent="Listo. Copiá el link de abajo y mandalo: tu cliente ve solo el recorrido, sin acceso a la app."; }
+    if(mobile&&navigator.share){ try{ await navigator.share({title:pack.pageTitle,url:link}); }catch(e){} }
+  }catch(e){ if(e.message!=="auth"){ st.className="status"; st.textContent="No se pudo publicar el recorrido. Revisá la conexión y probá de nuevo."; } }
+  finally{ busy(false); } };
+$("tourLinkCopy").onclick=()=>{ const v=$("tourLink"); v.select(); navigator.clipboard.writeText(v.value).then(()=>msg("Link copiado.",true)).catch(()=>{}); };
 renderTourRooms();
 
 /* ---------- pestañas y copiar ---------- */

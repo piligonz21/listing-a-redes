@@ -26,6 +26,12 @@
   force = true
 
 [[redirects]]
+  from = "/t/*"
+  to = "/.netlify/functions/tour-view"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
