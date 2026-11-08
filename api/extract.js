@@ -33,9 +33,20 @@ const num = (re, t) => { const m = t.match(re); return m ? m[1].replace(/\s/g, "
 
 // Fotos en la mejor calidad: de cada foto se queda con la versión más grande que encuentre.
 const SMALL = /(thumb|thumbnail|small|mini|_s\.|_t\.|_xs|_sm|-\d{2,3}x\d{2,3}\.|\/w_\d{2,3}|resize=\d{2,3}|[?&](w|width)=\d{2,3}\b)/i;
-function score(u, w) { return (w || 0) + (SMALL.test(u) ? 0 : 5000) + u.length / 1000; }
+function score(u, w) { return (w || 0) + (SMALL.test(u) ? 0 : 5000) + (/\d{2,4}x\d{2,4}|[?&](w|width|h|height)=/i.test(u) ? 0 : 100) + u.length / 1000; }
+// Clave para reconocer la misma foto en distintos tamaños o direcciones (sin parámetros ni medidas).
 function baseKey(u) {
-  try { const x = new URL(u); return (x.hostname + x.pathname).toLowerCase().replace(/(_|-)(thumb|thumbnail|small|mini|medium|large|big|xs|sm|md|lg|xl|\d{2,4}x\d{2,4}|\d{2,4}w)(?=\.)/g, "").replace(/\/(thumbs?|small|medium|large|resized|w_\d+|h_\d+)\//g, "/"); } catch (e) { return u; }
+  try {
+    const x = new URL(u);
+    let p = decodeURIComponent(x.pathname).toLowerCase();
+    p = p.replace(/\/(?:thumbs?|small|medium|large|big|resized?|original|full|xl|lg|md|sm|xs|fit-in|crop|scale|filters?:[^/]*|[whcs]_\d+[^/]*|\d{2,4}x\d{2,4}[^/]*|\d{2,4}(?:w|h|px)?)(?=\/)/g, "");
+    p = p.replace(/(?:[_\-.@](?:thumb|thumbnail|small|mini|medium|large|big|xs|sm|md|lg|xl|xxl|scaled|orig|original|full|hd|\d{2,4}x\d{2,4}|\d{2,4}[wh]|\dx|w\d{2,4}|h\d{2,4}))+(?=\.[a-z0-9]+$)/g, "");
+    p = p.replace(/\.(jpe?g|png|webp|avif)$/, "");
+    const file = p.split("/").pop();
+    // Nombres largos y únicos (hash/uuid) identifican la foto aunque cambie la carpeta o el dominio del CDN.
+    if (/[a-f0-9-]{16,}|\d{6,}/.test(file) && file.length >= 12) return file;
+    return x.hostname.replace(/^(?:img|images?|static|cdn|media|photos?)\d*\./, "") + p;
+  } catch (e) { return u; }
 }
 function images(html, base, ld) {
   const best = new Map();
@@ -54,7 +65,15 @@ function images(html, base, ld) {
   for (const m of html.matchAll(/(?:data-)?srcset=["']([^"']+)["']/gi))
     m[1].split(",").forEach(part => { const [u, d] = part.trim().split(/\s+/); add(u, parseInt(d) || 0); });
   for (const m of html.matchAll(/(?:src|data-src|data-lazy|data-original|data-full|data-zoom-image|data-large|href)=["']([^"']+\.(?:jpe?g|webp|png|avif)(?:\?[^"']*)?)["']/gi)) add(m[1], /data-(full|zoom|large|original)/i.test(m[0]) ? 3000 : 0);
-  return [...best.values()].sort((a, b) => a.order - b.order).map(v => v.u).slice(0, 12);
+  // Sitios que cargan las fotos con JavaScript: las direcciones están dentro de datos JSON en la página.
+  if (best.size < 4) {
+    const og = meta(html, "og:image"); let ogHost = ""; try { if (og) ogHost = new URL(og, base).hostname; } catch (e) {}
+    for (const m of html.matchAll(/https?:(?:\\?\/){2}[^"'\s<>()]+?\.(?:jpe?g|webp|png)(?:\?[^"'\s<>()]*)?(?=["'\s<>()]|\\")/gi)) {
+      const u = m[0].replace(/\\\//g, "/").replace(/\\u002F/gi, "/");
+      try { if (!ogHost || new URL(u).hostname === ogHost) add(u, 0); } catch (e) {}
+    }
+  }
+  return [...best.values()].sort((a, b) => a.order - b.order).map(v => v.u).slice(0, 15);
 }
 // Si la foto es una miniatura, prueba la versión grande quitando el tamaño del nombre o de la dirección.
 async function upgrade(u) {
@@ -74,6 +93,37 @@ async function upgrade(u) {
   return u;
 }
 
+const HEADERS = {
+  "User-Agent": UA,
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+  "Cache-Control": "no-cache",
+  "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+  "Sec-Ch-Ua-Mobile": "?0",
+  "Sec-Ch-Ua-Platform": '"macOS"',
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "none",
+  "Sec-Fetch-User": "?1",
+  "Upgrade-Insecure-Requests": "1"
+};
+// ¿La página trae datos del aviso (título y fotos), o es un esqueleto que se arma con JavaScript?
+function looksUseful(h) {
+  if (!h) return false;
+  const imgs = (h.match(/\.(?:jpe?g|webp|png)\b/gi) || []).length;
+  return imgs >= 3 && text(h).length > 400;
+}
+// Lector externo gratuito (r.jina.ai) que abre la página en un navegador real y devuelve el HTML ya armado.
+async function reader(url) {
+  try {
+    const h = { "X-Return-Format": "html", "X-Timeout": "12", Accept: "text/html" };
+    if (process.env.JINA_API_KEY) h.Authorization = "Bearer " + process.env.JINA_API_KEY;
+    const r = await fetch("https://r.jina.ai/" + url, { headers: h, signal: AbortSignal.timeout(16000) });
+    if (!r.ok) return "";
+    return await r.text();
+  } catch (e) { return ""; }
+}
+
 const { session } = require("../lib/auth");
 
 module.exports = async (req, res) => {
@@ -82,15 +132,20 @@ module.exports = async (req, res) => {
   const url = (req.query && req.query.url) || "";
   res.setHeader("Cache-Control", "s-maxage=600");
   if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "Paste a link that starts with http:// or https://" });
-  let html = "";
+  let html = "", status = 0;
   try {
-    const r = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9,es;q=0.8", Accept: "text/html" }, redirect: "follow" });
-    if (!r.ok) return res.status(200).json({ blocked: true, status: r.status, error: `The site didn't let us read the listing (code ${r.status}). Paste the text and add the photos by hand.` });
-    html = await r.text();
-  } catch (e) {
-    return res.status(200).json({ blocked: true, error: "Couldn't connect to the site. Paste the text and add the photos by hand." });
+    const r = await fetch(url, { headers: HEADERS, redirect: "follow", signal: AbortSignal.timeout(8000) });
+    status = r.status;
+    if (r.ok) html = await r.text();
+  } catch (e) {}
+  const blockedPage = h => !h || (/captcha|cf-chl|Attention Required|Just a moment|Access denied|Pardon Our Interruption|px-captcha/i.test(h) && h.length < 80000);
+  // Si el sitio bloquea o arma la página con JavaScript, la pedimos a un lector que abre la página como un navegador.
+  if (blockedPage(html) || !looksUseful(html)) {
+    const alt = await reader(url);
+    if (alt && !blockedPage(alt) && (looksUseful(alt) || blockedPage(html))) html = alt;
   }
-  if (/captcha|cf-chl|Attention Required|Just a moment/i.test(html) && html.length < 60000)
+  if (!html) return res.status(200).json({ blocked: true, status, error: status ? `The site didn't let us read the listing (code ${status}). Paste the text and add the photos by hand.` : "Couldn't connect to the site. Paste the text and add the photos by hand." });
+  if (blockedPage(html))
     return res.status(200).json({ blocked: true, error: "The site asked for a bot check (common on big portals). Try the listing on the agency's own website, or paste the text." });
 
   const ld = jsonLd(html);

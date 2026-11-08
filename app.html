@@ -307,7 +307,13 @@ $("btnLink").onclick=async()=>{
     if(d.images&&d.images.length){
       $("linkStatus").textContent=`Downloading ${d.images.length} photos…`;
       S.photos=[];
-      for(const u of d.images){ try{ S.photos.push(await loadRemote(u)); got++; }catch(e){} }
+      const seen=[];
+      for(const u of d.images){ try{
+        const p=await loadRemote(u), h=photoHash(p.img), dup=h&&seen.findIndex(o=>o&&sameHash(o,h));
+        if(h&&dup>-1){ // misma foto en otro tamaño: se queda solo con la más grande
+          const q=S.photos[dup]; if(p.img.naturalWidth*p.img.naturalHeight>q.img.naturalWidth*q.img.naturalHeight){ S.photos[dup]=p; seen[dup]=h; }
+          continue; }
+        S.photos.push(p); seen.push(h); got++; }catch(e){} }
       renderThumbs();
     }
     linkMissing=(d.missing||[]).filter(x=>x!=="Photos"||!got);
@@ -317,6 +323,16 @@ $("btnLink").onclick=async()=>{
   }catch(e){ $("linkStatus").textContent="Couldn't read the link. Paste the text and add the photos by hand."; }
   finally{ $("btnLink").disabled=false; }
 };
+// Huella de la foto (64 bits de la imagen entera + 64 del centro) para detectar la misma foto repetida en otro tamaño o recorte.
+function photoHash(img){
+  try{
+    const w=img.naturalWidth,h=img.naturalHeight,c=document.createElement("canvas"); c.width=9; c.height=8; const x=c.getContext("2d",{willReadFrequently:true});
+    const t=document.createElement("canvas"); t.width=t.height=36; const tx=t.getContext("2d"); tx.imageSmoothingQuality="high"; x.imageSmoothingQuality="high";
+    const bits=(sx,sy,sw,sh)=>{ tx.clearRect(0,0,36,36); tx.drawImage(img,sx,sy,sw,sh,0,0,36,36); x.clearRect(0,0,9,8); x.drawImage(t,0,0,36,36,0,0,9,8); const d=x.getImageData(0,0,9,8).data, g=[]; for(let i=0;i<72;i++) g.push(d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11); const b=[]; for(let r=0;r<8;r++) for(let k=0;k<8;k++) b.push(g[r*9+k]>g[r*9+k+1]?1:0); return b; };
+    const m=Math.min(w,h)*.8; return {full:bits(0,0,w,h),mid:bits((w-m)/2,(h-m)/2,m,m)};
+  }catch(e){ return null; }
+}
+function sameHash(a,b){ const d=(p,q)=>p.reduce((n,v,i)=>n+(v!==q[i]),0); return d(a.full,b.full)<=8||d(a.mid,b.mid)<=10; }
 function loadUrl(src,cors){return new Promise((res,rej)=>{const im=new Image(); if(cors) im.crossOrigin="anonymous"; im.onload=()=>res({img:im,url:src});im.onerror=rej;im.src=src;});}
 // Primero intenta la foto original directo del sitio (sin pasar por el servidor, que corta las fotos muy pesadas); si el sitio no lo permite, usa el proxy.
 async function loadRemote(u){
