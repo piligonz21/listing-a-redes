@@ -32,7 +32,7 @@ function text(html) {
 const num = (re, t) => { const m = t.match(re); return m ? m[1].replace(/\s/g, "") : ""; };
 
 // Fotos en la mejor calidad: de cada foto se queda con la versión más grande que encuentre.
-const SMALL = /(thumb|thumbnail|small|mini|_s\.|_t\.|_xs|_sm|-\d{2,3}x\d{2,3}\.|\/w_\d{2,3}|resize=\d{2,3}|[?&](w|width)=\d{2,3}\b)/i;
+const SMALL = /(thumb|thumbnail|small|mini|_s\.|_t\.|_th\.|_xs|_sm|-\d{2,3}x\d{2,3}\.|\/w_\d{2,3}|resize=\d{2,3}|[?&](w|width)=\d{2,3}\b)/i;
 function score(u, w) { return (w || 0) + (SMALL.test(u) ? 0 : 5000) + (/\d{2,4}x\d{2,4}|[?&](w|width|h|height)=/i.test(u) ? 0 : 100) + u.length / 1000; }
 // Clave para reconocer la misma foto en distintos tamaños o direcciones (sin parámetros ni medidas).
 function baseKey(u) {
@@ -65,6 +65,17 @@ function images(html, base, ld) {
   for (const m of html.matchAll(/(?:data-)?srcset=["']([^"']+)["']/gi))
     m[1].split(",").forEach(part => { const [u, d] = part.trim().split(/\s+/); add(u, parseInt(d) || 0); });
   for (const m of html.matchAll(/(?:src|data-src|data-lazy|data-original|data-full|data-zoom-image|data-large|href)=["']([^"']+\.(?:jpe?g|webp|png|avif)(?:\?[^"']*)?)["']/gi)) add(m[1], /data-(full|zoom|large|original)/i.test(m[0]) ? 3000 : 0);
+  // Fotos guardadas como direcciones relativas del mismo CDN que la og:image (ej. Remax: "listings/<id>/<foto>.jpg").
+  try {
+    const og = meta(html, "og:image");
+    if (og) {
+      const o = new URL(og, base), seg = o.pathname.split("/").filter(Boolean)[0];
+      if (seg && seg.length > 2) {
+        const re = new RegExp(`["'(\\s>]\\/?(${seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\/[^"'\\s<>()]+?\\.(?:jpe?g|png|webp))(?=["'\\s<>()])`, "gi");
+        for (const m of html.matchAll(re)) add(o.origin + "/" + m[1], 5000);
+      }
+    }
+  } catch (e) {}
   // Sitios que cargan las fotos con JavaScript: las direcciones están dentro de datos JSON en la página.
   if (best.size < 4) {
     const og = meta(html, "og:image"); let ogHost = ""; try { if (og) ogHost = new URL(og, base).hostname; } catch (e) {}
@@ -80,6 +91,8 @@ function images(html, base, ld) {
 const BIG_SIZES = ["1920x1080", "1600x1200", "1500x1500", "1200x1200", "1280x960", "1200x900", "1024x768", "960x720", "720x532"];
 function candidates(u) {
   const out = [];
+  const a = u.match(/\/\d{2,4}x(?:AUTO|auto)\/|\/AUTOx\d{2,4}\//);
+  if (a) out.push(u.replace(a[0], "/"));
   const m = u.match(/\/(\d{2,4})x(\d{2,4})\//);
   if (m && Math.max(+m[1], +m[2]) < 1600) {
     BIG_SIZES.forEach(sz => { const [w, h] = sz.split("x").map(Number); if (Math.max(w, h) > Math.max(+m[1], +m[2])) out.push(u.replace(m[0], `/${sz}/`)); });
@@ -87,7 +100,7 @@ function candidates(u) {
   }
   const f = u.match(/[-_](\d{2,4})x(\d{2,4})(?=\.(?:jpe?g|png|webp)(?:\?|$))/i);
   if (f && Math.max(+f[1], +f[2]) < 1600) out.push(u.replace(f[0], ""));
-  out.push(u.replace(/(_|-)(thumb|thumbnail|small|mini|medium|xs|sm|md)(?=\.)/i, ""));
+  out.push(u.replace(/(_|-)(thumb|thumbnail|small|mini|medium|xs|sm|md|th)(?=\.)/i, ""));
   out.push(u.replace(/\/(thumbs?|small|medium)\//i, "/"));
   if (/[?&](w|width)=\d{2,4}\b/i.test(u)) out.push(u.replace(/([?&](?:w|width)=)\d+/i, "$12000").replace(/([?&](?:h|height)=)\d+&?/i, ""));
   return [...new Set(out)].filter(x => x !== u);
@@ -144,7 +157,7 @@ module.exports = async (req, res) => {
   let who = null; try { who = await session(req); } catch (e) {}
   if (!who) return res.status(401).json({ error: "Tu sesión venció. Volvé a entrar con tu código." });
   const url = (req.query && req.query.url) || "";
-  res.setHeader("Cache-Control", "s-maxage=600");
+  res.setHeader("Cache-Control", "no-store");
   if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "Pegá un link que empiece con http:// o https://" });
   // Netlify corta la función a los 10 segundos: todo tiene que entrar en ese tiempo.
   const t0 = Date.now(), left = () => 9300 - (Date.now() - t0);
@@ -188,6 +201,7 @@ module.exports = async (req, res) => {
   let price = "";
   if (priceLd && priceLd.price) price = `${priceLd.priceCurrency === "USD" ? "USD" : priceLd.priceCurrency || "$"} ${Number(priceLd.price).toLocaleString("es-AR")}`;
   if (!price) { const p = t.match(/(USD|U\$S|US\$|u\$d)\s?([\d.,]{4,})/i); if (p) price = "USD " + p[2].replace(/[.,]+$/, ""); }
+  if (!price) { const p = t.match(/([\d][\d.,]{3,})\s?(?:USD|U\$S|US\$|u\$d|d[oó]lares)\b/i); if (p) price = "USD " + p[1].replace(/[.,]+$/, ""); }
 
   const title = meta(html, "og:title") || (html.match(/<title>([^<]*)<\/title>/i) || [])[1] || "";
   const description = meta(html, "og:description") || meta(html, "description");
@@ -199,7 +213,7 @@ module.exports = async (req, res) => {
     description: description.slice(0, 1500),
     location: loc,
     price,
-    m2: num(/(\d[\d.,]*)\s*m(?:²|2|ts2?)\s*(?:cub|cubiertos?)/i, t) || num(/(?:sup(?:erficie)?\.?\s*cubierta)\D{0,12}(\d[\d.,]*)/i, t),
+    m2: num(/(\d[\d.,]*)\s*m(?:²|2|ts2?)\s*(?:cub|cubiertos?)/i, t) || num(/(?:sup(?:erficie)?\.?\s*cubierta)\D{0,12}(\d[\d.,]*)/i, t) || num(/(\d[\d.,]*)\s*m(?:²|2)\b/i, title).replace(/\.00?$/, ""),
     lot: num(/(\d[\d.,]*)\s*m(?:²|2|ts2?)\s*(?:de\s*)?(?:terreno|lote|tot|totales?)/i, t) || num(/(?:terreno|sup(?:erficie)?\.?\s*total)\D{0,12}(\d[\d.,]*)/i, t),
     rooms: num(/(\d+)\s*(?:ambientes?|amb\.)/i, t),
     bedrooms: num(/(\d+)\s*(?:dormitorios?|dorm\.|habitaciones?)/i, t),
