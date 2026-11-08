@@ -146,9 +146,10 @@ async function reader(url, ms) {
     const h = { "X-Return-Format": "html", "X-Timeout": String(Math.max(3, Math.floor(ms / 1000) - 1)), Accept: "text/html" };
     if (process.env.JINA_API_KEY) h.Authorization = "Bearer " + process.env.JINA_API_KEY;
     const r = await fetch("https://r.jina.ai/" + url, { headers: h, signal: AbortSignal.timeout(ms) });
+    reader.last = r.status;
     if (!r.ok) return "";
     return await r.text();
-  } catch (e) { return ""; }
+  } catch (e) { reader.last = e.name === "TimeoutError" ? "tiempo" : "error"; return ""; }
 }
 
 const { session } = require("../lib/auth");
@@ -167,6 +168,13 @@ module.exports = async (req, res) => {
     status = r.status;
     if (r.ok) html = await r.text();
   } catch (e) {}
+  // Algunos sitios rechazan los encabezados "de navegador" que no coinciden con el cliente real: reintento simple.
+  if (!html || status === 403 || status === 401) {
+    try {
+      const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "text/html", "Accept-Language": "es-AR,es;q=0.9" }, redirect: "follow", signal: AbortSignal.timeout(Math.min(4000, left() - 4000)) });
+      if (r.ok) { html = await r.text(); status = r.status; } else if (!status) status = r.status;
+    } catch (e) {}
+  }
   const log = { url: url.slice(0, 120), direct: status, directLen: html.length };
   // Solo cuenta como bloqueo una página de verificación anti-robots (no un formulario de contacto con reCAPTCHA).
   const blockedPage = h => {
@@ -190,9 +198,10 @@ module.exports = async (req, res) => {
   }
   log.ms = Date.now() - t0; log.blocked = blockedPage(html); log.useful = looksUseful(html);
   console.log("extract", JSON.stringify(log));
-  if (!html) return res.status(200).json({ blocked: true, status, error: status ? `El sitio no dejó leer el aviso (código ${status}). Pegá el texto y subí las fotos a mano.` : "No pude conectarme con el sitio. Pegá el texto y subí las fotos a mano." });
+  const diag = ` [detalle: sitio ${status || "sin respuesta"}${log.readerLen !== undefined ? `, lector ${reader.last}` : ""}]`;
+  if (!html) return res.status(200).json({ blocked: true, status, error: status ? `El sitio no dejó leer el aviso (código ${status}). Pegá el texto y subí las fotos a mano.` + diag : "No pude conectarme con el sitio. Pegá el texto y subí las fotos a mano." + diag });
   if (blockedPage(html))
-    return res.status(200).json({ blocked: true, error: "El sitio pidió verificación anti-robots (pasa en algunos portales grandes). Probá con el aviso en la web de la inmobiliaria o pegá el texto." });
+    return res.status(200).json({ blocked: true, error: "El sitio pidió verificación anti-robots (pasa en algunos portales grandes). Probá con el aviso en la web de la inmobiliaria o pegá el texto." + diag });
 
   const ld = jsonLd(html);
   const t = text(html);
