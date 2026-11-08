@@ -378,6 +378,11 @@ input[type=color]{width:100%;height:40px;padding:4px;border:1px solid var(--line
               <div><label for="mi_case">Títulos en</label><select id="mi_case"><option value="normal">Normal</option><option value="mayusculas">MAYÚSCULAS</option></select></div>
               <div class="full"><label for="mi_layout">Diseño</label><select id="mi_layout"></select></div>
               <div class="full"><label for="mi_overlay">La foto va</label><select id="mi_overlay"></select></div>
+              <div><label for="mi_top">Franja arriba</label><select id="mi_top"><option value="none">Sin franja</option><option value="lisa">Lisa</option><option value="difuminada">Con difuminado</option></select></div>
+              <div><label for="mi_topc">Color franja arriba</label><input id="mi_topc" type="color"></div>
+              <div><label for="mi_bot">Franja abajo</label><select id="mi_bot"><option value="none">Sin franja</option><option value="lisa">Lisa</option><option value="difuminada">Con difuminado</option></select></div>
+              <div><label for="mi_botc">Color franja abajo</label><input id="mi_botc" type="color"></div>
+              <div class="full"><label for="mi_bandh">Alto de las franjas</label><input id="mi_bandh" type="range" min="3" max="25" step="1"></div>
             </div>
           </section>
           <section class="panel">
@@ -850,9 +855,10 @@ function stockTag(x,W,H){
 // Firma chica arriba de cada placa: nombre + @ o WhatsApp
 function signature(x,W,H,style,k,b){
   const txt=[b.brand,b.handle].filter(Boolean).join("   ·   ").toUpperCase(); if(!txt) return;
-  const dark=k==="facts"&&(style==="oscuro"||style==="sold"||(style==="mi"&&MI_TK&&lum(MI_TK.bg)>0.4));
-  x.save(); x.fillStyle=dark?"#2B2B2B":"#FFFFFF";
-  if(!dark){ x.shadowColor="rgba(0,0,0,0.55)"; x.shadowBlur=W*0.012; }
+  const tb=style==="mi"&&MI_TK&&bandColor(MI_TK,"topBand");
+  const dark=!tb&&k==="facts"&&(style==="oscuro"||style==="sold"||(style==="mi"&&MI_TK&&lum(MI_TK.bg)>0.4));
+  x.save(); x.fillStyle=tb?inkOn(tb.color,MI_TK):dark?"#2B2B2B":"#FFFFFF";
+  if(!dark&&!tb){ x.shadowColor="rgba(0,0,0,0.55)"; x.shadowBlur=W*0.012; }
   sfit(x,txt,W/2,H*0.035+W*0.012,3,W*0.86,F.jost(500),W*0.021); x.restore();
 }
 
@@ -1473,24 +1479,36 @@ function textBox(x,W,tk,top,boxH,maxW,p,col,acc,big,bs=0.03){
   if(f){ x.font=T.t(f.size); x.fillStyle=col; y=lines(x,f,cx,y+f.size*0.85,1.08,"center"); }
   if(bl.length){ x.font=T.b(W*bs); x.fillStyle=col; x.globalAlpha=.9; x.textAlign="center"; bl.forEach((l,i)=>x.fillText(l,cx,y+W*(0.035+bs*1.1)+i*W*lh)); x.textAlign="left"; x.globalAlpha=1; }
 }
+// Franjas de color de la marca (arriba / abajo), lisas o con difuminado hacia la foto.
+function bandColor(tk,pos){ const b=tk[pos]; return b&&b.style&&b.style!=="none"?b:null; }
+function bands(x,W,H,tk){
+  [["topBand",1],["bottomBand",-1]].forEach(([k,dir])=>{ const b=bandColor(tk,k); if(!b) return;
+    const h=H*(b.h||0.1), f=b.style==="difuminada"?H*(b.fade||0.12):0, c=b.color||tk.accent;
+    const n=parseInt(c.slice(1),16), rgb=`${n>>16&255},${n>>8&255},${n&255}`;
+    x.save(); x.fillStyle=c;
+    if(dir>0){ x.fillRect(0,0,W,h); if(f){ const g=x.createLinearGradient(0,h,0,h+f); g.addColorStop(0,`rgba(${rgb},1)`); g.addColorStop(1,`rgba(${rgb},0)`); x.fillStyle=g; x.fillRect(0,h,W,f); } }
+    else { x.fillRect(0,H-h,W,h); if(f){ const g=x.createLinearGradient(0,H-h,0,H-h-f); g.addColorStop(0,`rgba(${rgb},1)`); g.addColorStop(1,`rgba(${rgb},0)`); x.fillStyle=g; x.fillRect(0,H-h-f,W,f); } }
+    x.restore(); });
+}
 function shadowed(x,on,W){ if(on){ x.shadowColor="rgba(0,0,0,0.55)"; x.shadowBlur=W*0.015; } else x.shadowBlur=0; }
 // Dibuja una placa con la ficha de estilo. kind: cover | photo | text | facts | cta
 function paint(x,W,H,tk,o){
   const M=W*0.07, cx=W/2, lay=tk.layout, T=FONT_OPTS[tk.titleFont]||FONT_OPTS["sans-moderna"];
   if(o.kind==="cover"||o.kind==="photo"){
     const p={eyebrow:o.eyebrow,title:o.title,sub:o.sub,rule:true}, big=o.kind==="cover";
-    if(lay==="banda-abajo"){ const band=H*(o.sub?0.34:0.3); x.fillStyle=tk.surface; x.fillRect(0,0,W,H); coverFit(x,o.img,0,0,W,H-band);
+    if(lay==="banda-abajo"){ const band=H*(o.sub?0.34:0.3); x.fillStyle=tk.surface; x.fillRect(0,0,W,H); coverFit(x,o.img,0,0,W,H-band); bands(x,W,H,tk);
       textBox(x,W,tk,H-band,band,W-2*M,p,inkOn(tk.surface,tk),accOn(tk.surface,tk,tk.muted),big); }
-    else if(lay==="marco"){ const m=W*0.055, ph=H*0.62; x.fillStyle=tk.bg; x.fillRect(0,0,W,H); coverFit(x,o.img,m,m,W-2*m,ph);
+    else if(lay==="marco"){ const m=W*0.055, ph=H*0.62; x.fillStyle=tk.bg; x.fillRect(0,0,W,H); coverFit(x,o.img,m,m,W-2*m,ph); bands(x,W,H,tk);
       textBox(x,W,tk,m+ph,H-ph-2*m,W-2*M,p,inkOn(tk.bg,tk),accOn(tk.bg,tk,tk.muted),big); }
-    else if(lay==="tarjeta"){ coverFit(x,o.img,0,0,W,H); vgrad(x,H*0.4,H,"rgba(0,0,0,0)","rgba(0,0,0,0.35)",W);
+    else if(lay==="tarjeta"){ coverFit(x,o.img,0,0,W,H); vgrad(x,H*0.4,H,"rgba(0,0,0,0)","rgba(0,0,0,0.35)",W); bands(x,W,H,tk);
       const ch=H*(o.sub?0.36:0.3), cy=H-ch-M*0.8; x.globalAlpha=.95; x.fillStyle=tk.surface; x.fillRect(M,cy,W-2*M,ch); x.globalAlpha=1;
       textBox(x,W,tk,cy,ch,W-3.2*M,p,inkOn(tk.surface,tk),accOn(tk.surface,tk,tk.muted),big); }
-    else if(lay==="arco"){ x.fillStyle=tk.bg; x.fillRect(0,0,W,H); const th=H*0.32;
+    else if(lay==="arco"){ x.fillStyle=tk.bg; x.fillRect(0,0,W,H); bands(x,W,H,tk); const th=H*0.32;
       textBox(x,W,tk,H*0.03,th,W-2*M,p,inkOn(tk.bg,tk),accOn(tk.bg,tk,tk.muted),big);
       const aw=W*0.72, ah=H-th-H*0.07; x.save(); arch(x,(W-aw)/2,th+H*0.02,aw,ah); x.clip(); coverFit(x,o.img,(W-aw)/2,th+H*0.02,aw,ah); x.restore(); }
     else { coverFit(x,o.img,0,0,W,H); const light=tk.overlay==="claro";
       if(tk.overlay!=="sin-overlay") vgrad(x,H*0.38,H,light?"rgba(255,255,255,0)":"rgba(0,0,0,0)",light?"rgba(255,255,255,0.85)":"rgba(0,0,0,0.78)",W);
+      bands(x,W,H,tk);
       const col=light?inkOn("#FFFFFF",tk):"#FFFFFF"; shadowed(x,tk.overlay==="sin-overlay",W);
       textBox(x,W,tk,H*0.56,H*0.38,W-2*M,p,col,light?accOn("#FFFFFF",tk,col):(lum(tk.accent)>.25?tk.accent:"#FFFFFF"),big); shadowed(x,false,W); }
     if(o.kind==="cover"&&lay!=="arco") drawLogo(x,cx,W*0.045,W*0.3,W*0.075,"center");
@@ -1498,12 +1516,13 @@ function paint(x,W,H,tk,o){
     let bg=tk.bg, col;
     if(o.img){ coverFit(x,o.img,0,0,W,H); x.fillStyle="rgba(0,0,0,0.58)"; x.fillRect(0,0,W,H); bg="#222222"; col="#FFFFFF"; }
     else { x.fillStyle=bg; x.fillRect(0,0,W,H); col=inkOn(bg,tk); }
+    bands(x,W,H,tk);
     const acc=o.img?(lum(tk.accent)>.25?tk.accent:"#FFFFFF"):accOn(bg,tk,col);
     if(o.num){ x.font=T.t(W*0.16); x.fillStyle=acc; x.textAlign="center"; x.fillText(o.num,cx,H*0.3); x.textAlign="left"; }
     textBox(x,W,tk,H*0.33,H*0.52,W-2.4*M,{title:o.title,sub:o.sub},col,acc,false,0.042);
     if(o.swipe){ x.font=F.jost(500)(W*0.024); x.fillStyle=col; x.globalAlpha=.7; x.textAlign="center"; x.fillText(o.swipe,cx,H-M*0.9); x.textAlign="left"; x.globalAlpha=1; }
   } else if(o.kind==="facts"){
-    x.fillStyle=tk.bg; x.fillRect(0,0,W,H); const col=inkOn(tk.bg,tk), acc=accOn(tk.bg,tk,col);
+    x.fillStyle=tk.bg; x.fillRect(0,0,W,H); bands(x,W,H,tk); const col=inkOn(tk.bg,tk), acc=accOn(tk.bg,tk,col);
     x.fillStyle=acc; sfit(x,(o.factsLabel||"").toUpperCase(),cx,M+W*0.06,6,W-2*M,F.jost(600),W*0.03);
     const n=Math.min((o.facts||[]).length,6), rows=Math.ceil(n/2), top=M+W*0.12, avail=H-M-W*0.2-top, rowH=Math.min(W*0.2,avail/Math.max(rows,1));
     if(n) factGrid(x,{facts:o.facts},M,top+(avail-rows*rowH)/2,W-2*M,2,rowH,T.t(W*0.085),T.b(W*0.026),col);
@@ -1512,6 +1531,7 @@ function paint(x,W,H,tk,o){
     x.fillStyle=tk.bg; x.fillRect(0,0,W,H); const col=inkOn(tk.bg,tk), acc=accOn(tk.bg,tk,col);
     const ph=H*0.4;
     if(o.img){ if(lay==="arco"){ const aw=W*0.5; x.save(); arch(x,(W-aw)/2,M,aw,ph); x.clip(); coverFit(x,o.img,(W-aw)/2,M,aw,ph); x.restore(); } else coverFit(x,o.img,M,M,W-2*M,ph); }
+    bands(x,W,H,tk);
     const top=o.img?M+ph:0, area=H-top-M-W*0.16;
     textBox(x,W,tk,top,area,W-2*M,{title:o.visit,sub:o.cta,rule:true},col,acc,true);
     brandMark(x,{brand:o.brand},cx,H-M-W*0.15,"center",col,F.jost(600)(W*0.026),3,W*0.055);
@@ -1615,6 +1635,23 @@ async function addExamples(files){
 }
 const hex=c=>"#"+c.map(v=>Math.round(v).toString(16).padStart(2,"0")).join("");
 function satOf(c){ const mx=Math.max(...c)/255, mn=Math.min(...c)/255; return mx?(mx-mn)/mx:0; }
+// Busca franjas de color arriba o abajo que se repiten en los ejemplos (lisas o que se difuminan hacia la foto).
+function detectBand(imgs,top){
+  const found=imgs.map(im=>{ const w=48, h=96, c=canvas(w,h), x=c.getContext("2d"); x.drawImage(im,0,0,w,h); const d=x.getImageData(0,0,w,h).data;
+    const row=y=>{ y=top?y:h-1-y; let m=[0,0,0]; for(let i=0;i<w;i++) for(let k=0;k<3;k++) m[k]+=d[(y*w+i)*4+k]/w;
+      let sd=0; for(let i=0;i<w;i++){ let e=0; for(let k=0;k<3;k++) e+=(d[(y*w+i)*4+k]-m[k])**2; sd+=Math.sqrt(e)/w; } return {m,sd}; };
+    const r0=row(0); if(r0.sd>14) return null;
+    const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+    let solid=0; while(solid<h*0.4){ const r=row(solid); if(r.sd>14||dist(r.m,r0.m)>22) break; solid++; }
+    let fade=solid; while(fade<h*0.6){ const r=row(fade); if(dist(r.m,r0.m)>70||r.sd>45) break; fade++; }
+    if(solid<h*0.03&&fade-solid<h*0.06) return null;
+    return {color:hex(r0.m), h:solid/h, fade:(fade-solid)/h}; }).filter(Boolean);
+  if(found.length<Math.max(1,Math.ceil(imgs.length/2))) return {style:"none"};
+  const c0=found[0].color, same=found.filter(f=>contrast(f.color,c0)<1.35);
+  if(same.length<Math.max(1,Math.ceil(imgs.length/2))) return {style:"none"};
+  const med=a=>a.sort((p,q)=>p-q)[a.length>>1], fh=med(same.map(f=>f.h)), ff=med(same.map(f=>f.fade));
+  return {style:ff>0.05?"difuminada":"lisa", color:c0, h:Math.max(0.04,Math.min(0.25,fh||0.06)), fade:Math.max(0.06,Math.min(0.3,ff||0.12))};
+}
 // Sin IA: saca la paleta de los ejemplos (colores que más se repiten, fondo según los bordes).
 function guessStyle(imgs){
   const px=[], edge=[];
@@ -1630,7 +1667,8 @@ function guessStyle(imgs){
   const acc=cand.filter(o=>o.c!==ink).sort((a,b)=>b.sat*Math.sqrt(b.sh)-a.sat*Math.sqrt(a.sh))[0];
   const edgeShare=Math.max(...ec)/edge.length;
   return {name:"Mi estilo", summary:"", bg, surface:bg, ink:contrast(ink,bg)>=3?ink:(lum(bg)>.4?"#111111":"#FFFFFF"), muted:ink, accent:acc&&acc.sat>0.2?acc.c:ink,
-    titleFont:"sans-moderna", titleCase:"normal", layout:edgeShare>0.55?"marco":"foto-completa", overlay:"degradado-oscuro"};
+    titleFont:"sans-moderna", titleCase:"normal", layout:edgeShare>0.55?"marco":"foto-completa", overlay:"degradado-oscuro",
+    topBand:detectBand(imgs,true), bottomBand:detectBand(imgs,false)};
 }
 function smallJpeg(img,max){ const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)), c=canvas(Math.round(img.naturalWidth*s),Math.round(img.naturalHeight*s)); c.getContext("2d").drawImage(img,0,0,c.width,c.height); return c.toDataURL("image/jpeg",0.82); }
 $("obAnalyze").onclick=async()=>{
@@ -1649,12 +1687,17 @@ function fillMiForm(){
   $("miEdit").hidden=!MI_TK; if(!MI_TK) return;
   $("mi_name").value=MI_TK.name||"Mi estilo"; ["bg","surface","ink","accent"].forEach(k=>$("mi_"+k).value=MI_TK[k]);
   $("mi_font").value=MI_TK.titleFont; $("mi_layout").value=MI_TK.layout; $("mi_case").value=MI_TK.titleCase; $("mi_overlay").value=MI_TK.overlay;
+  const tb=MI_TK.topBand||{style:"none"}, bb=MI_TK.bottomBand||{style:"none"};
+  $("mi_top").value=tb.style||"none"; $("mi_topc").value=tb.color||MI_TK.bg; $("mi_bot").value=bb.style||"none"; $("mi_botc").value=bb.color||MI_TK.bg;
+  $("mi_bandh").value=Math.round(((tb.style!=="none"?tb.h:bb.h)||0.08)*100);
 }
 const fillSel=(id,o)=>{ $(id).innerHTML=Object.entries(o).map(([k,v])=>`<option value="${k}">${typeof v==="string"?v:v.label}</option>`).join(""); };
 fillSel("mi_font",FONT_OPTS); fillSel("mi_layout",LAYOUT_OPTS); fillSel("mi_overlay",OVERLAY_OPTS);
-["mi_name","mi_bg","mi_surface","mi_ink","mi_accent","mi_font","mi_layout","mi_case","mi_overlay"].forEach(id=>$(id).addEventListener("input",()=>{
-  if(!MI_TK) return; const t={...MI_TK, name:$("mi_name").value.trim()||"Mi estilo", bg:$("mi_bg").value, surface:$("mi_surface").value, ink:$("mi_ink").value, accent:$("mi_accent").value,
-    muted:$("mi_ink").value, titleFont:$("mi_font").value, layout:$("mi_layout").value, titleCase:$("mi_case").value, overlay:$("mi_overlay").value};
+["mi_name","mi_bg","mi_surface","mi_ink","mi_accent","mi_font","mi_layout","mi_case","mi_overlay","mi_top","mi_topc","mi_bot","mi_botc","mi_bandh"].forEach(id=>$(id).addEventListener("input",()=>{
+  if(!MI_TK) return; const bh=parseInt($("mi_bandh").value,10)/100;
+  const t={...MI_TK, name:$("mi_name").value.trim()||"Mi estilo", bg:$("mi_bg").value, surface:$("mi_surface").value, ink:$("mi_ink").value, accent:$("mi_accent").value,
+    muted:$("mi_ink").value, titleFont:$("mi_font").value, layout:$("mi_layout").value, titleCase:$("mi_case").value, overlay:$("mi_overlay").value,
+    topBand:{...(MI_TK.topBand||{}),style:$("mi_top").value,color:$("mi_topc").value,h:bh}, bottomBand:{...(MI_TK.bottomBand||{}),style:$("mi_bot").value,color:$("mi_botc").value,h:bh}};
   setMine(t); S.style="mi"; markStyle(); brandPreview(); if(DL.post) dailyRender(); }));
 let bpT=null;
 function brandPreview(){ clearTimeout(bpT); bpT=setTimeout(()=>{
@@ -1762,6 +1805,7 @@ function dailyRender(){
   const p=DL.post; if(!p) return;
   const tk=tkOf(S.style), W=1080, H=1350, brand=$("f_brand").value.trim(), handle=$("f_handle").value.trim(), ph=DL.photos;
   const sig=(x,Wd,Hd,onPhoto,bg)=>{ const txt=[brand,handle].filter(Boolean).join("   ·   ").toUpperCase(); if(!txt) return; x.save();
+    const tb=bandColor(tk,"topBand"); if(tb){ onPhoto=false; bg=tb.color; }
     x.fillStyle=onPhoto?"#FFFFFF":inkOn(bg,tk); if(onPhoto){ x.shadowColor="rgba(0,0,0,0.55)"; x.shadowBlur=Wd*0.012; } sfit(x,txt,Wd/2,Hd*0.035+Wd*0.012,3,Wd*0.86,F.jost(500),Wd*0.021); x.restore(); };
   const make=(Wd,Hd,o,name,onPhoto)=>{ const c=canvas(Wd,Hd), x=c.getContext("2d"); paint(x,Wd,Hd,tk,o); if(o.kind!=="cta") sig(x,Wd,Hd,onPhoto,o.kind==="text"?tk.bg:tk.surface); return {c,name}; };
   const coverOn=tk.layout==="foto-completa"||tk.layout==="tarjeta";
