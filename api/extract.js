@@ -181,7 +181,7 @@ module.exports = async (req, res) => {
     if (!h) return true;
     const title = ((h.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || "").trim();
     if (/just a moment|attention required|access denied|pardon our interruption|un momento|verificaci[oó]n|are you a robot|security check/i.test(title)) return true;
-    return h.length < 60000 && /cf-chl-|challenge-platform|px-captcha|captcha-delivery\.com|_Incapsula_Resource|geo\.captcha/i.test(h) && !/og:title|application\/ld\+json/i.test(h);
+    return h.length < 60000 && /cf-chl-|challenge-platform|px-captcha|captcha-delivery\.com|_Incapsula_Resource|geo\.captcha|awswaf|gokuProps|AwsWafIntegration|challenge\.js/i.test(h) && !/og:title|application\/ld\+json/i.test(h);
   };
   // Si el sitio bloquea o arma la página con JavaScript, la pedimos a un lector que abre la página como un navegador.
   if ((blockedPage(html) || !looksUseful(html)) && left() > 3000) {
@@ -232,6 +232,8 @@ module.exports = async (req, res) => {
     images: await withTimeout(Promise.all(images(html, url, ld).map(u => upgrade(u, Math.min(2500, left() - 300)))), Math.max(0, left() - 200), images(html, url, ld)),
     source: url
   };
+  if (!data.title && !data.images.length && !data.price)
+    return res.status(200).json({ blocked: true, error: "No pude leer este aviso (el sitio no mostró el contenido). Pegá el texto y subí las fotos a mano." + diag });
   const labels = { title: "Titular", location: "Barrio y ciudad", price: "Precio", m2: "m² cubiertos", lot: "m² terreno", rooms: "Ambientes", bedrooms: "Dormitorios", bathrooms: "Baños", parking: "Cocheras" };
   data.missing = Object.keys(labels).filter(k => !data[k]).map(k => labels[k]);
   if (!data.images.length) data.missing.push("Fotos");
