@@ -75,22 +75,35 @@ function images(html, base, ld) {
   }
   return [...best.values()].sort((a, b) => a.order - b.order).map(v => v.u).slice(0, 15);
 }
-// Si la foto es una miniatura, prueba la versión grande quitando el tamaño del nombre o de la dirección.
-async function upgrade(u) {
-  if (!SMALL.test(u)) return u;
-  const tries = [
-    u.replace(/(_|-)(thumb|thumbnail|small|mini|xs|sm)(?=\.)/i, ""),
-    u.replace(/\/(thumbs?|small)\//i, "/"),
-    u.replace(/-\d{2,3}x\d{2,3}(?=\.)/, ""),
-    u.replace(/([?&])(w|width|h|height|resize)=\d+&?/gi, "$1").replace(/[?&]$/, "")
-  ].filter(x => x !== u);
-  for (const t of tries) {
-    try {
-      const r = await fetch(t, { method: "HEAD", headers: { "User-Agent": UA }, signal: AbortSignal.timeout(2500) });
-      if (r.ok && (r.headers.get("content-type") || "").startsWith("image/")) return t;
-    } catch (e) {}
+// Si la foto es chica, prueba versiones más grandes (en orden de preferencia) y se queda con la primera que exista.
+// Ej.: Zonaprop .../360x266/123.jpg → .../1200x1200/123.jpg; WordPress foto-1024x683.jpg → foto.jpg; ?w=400 → ?w=2000.
+const BIG_SIZES = ["1920x1080", "1600x1200", "1500x1500", "1200x1200", "1280x960", "1200x900", "1024x768", "960x720", "720x532"];
+function candidates(u) {
+  const out = [];
+  const m = u.match(/\/(\d{2,4})x(\d{2,4})\//);
+  if (m && Math.max(+m[1], +m[2]) < 1600) {
+    BIG_SIZES.forEach(sz => { const [w, h] = sz.split("x").map(Number); if (Math.max(w, h) > Math.max(+m[1], +m[2])) out.push(u.replace(m[0], `/${sz}/`)); });
+    out.push(u.replace(m[0], "/"));
   }
-  return u;
+  const f = u.match(/[-_](\d{2,4})x(\d{2,4})(?=\.(?:jpe?g|png|webp)(?:\?|$))/i);
+  if (f && Math.max(+f[1], +f[2]) < 1600) out.push(u.replace(f[0], ""));
+  out.push(u.replace(/(_|-)(thumb|thumbnail|small|mini|medium|xs|sm|md)(?=\.)/i, ""));
+  out.push(u.replace(/\/(thumbs?|small|medium)\//i, "/"));
+  if (/[?&](w|width)=\d{2,4}\b/i.test(u)) out.push(u.replace(/([?&](?:w|width)=)\d+/i, "$12000").replace(/([?&](?:h|height)=)\d+&?/i, ""));
+  return [...new Set(out)].filter(x => x !== u);
+}
+async function isImage(t) {
+  try {
+    const r = await fetch(t, { method: "HEAD", headers: { "User-Agent": UA }, signal: AbortSignal.timeout(3000) });
+    return r.ok && (r.headers.get("content-type") || "").startsWith("image/");
+  } catch (e) { return false; }
+}
+async function upgrade(u) {
+  const tries = candidates(u).slice(0, 10);
+  if (!tries.length) return u;
+  const ok = await Promise.all(tries.map(isImage));
+  const i = ok.indexOf(true);
+  return i > -1 ? tries[i] : u;
 }
 
 const HEADERS = {
@@ -143,6 +156,13 @@ module.exports = async (req, res) => {
   if (blockedPage(html) || !looksUseful(html)) {
     const alt = await reader(url);
     if (alt && !blockedPage(alt) && (looksUseful(alt) || blockedPage(html))) html = alt;
+  }
+  // Último intento para portales con bloqueo fuerte (ej. Argenprop): servicio de scraping, solo si hay SCRAPERAPI_KEY.
+  if ((blockedPage(html) || !looksUseful(html)) && process.env.SCRAPERAPI_KEY) {
+    try {
+      const r = await fetch(`https://api.scraperapi.com/?api_key=${encodeURIComponent(process.env.SCRAPERAPI_KEY)}&country_code=ar&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(25000) });
+      if (r.ok) { const alt = await r.text(); if (!blockedPage(alt)) html = alt; }
+    } catch (e) {}
   }
   if (!html) return res.status(200).json({ blocked: true, status, error: status ? `The site didn't let us read the listing (code ${status}). Paste the text and add the photos by hand.` : "Couldn't connect to the site. Paste the text and add the photos by hand." });
   if (blockedPage(html))

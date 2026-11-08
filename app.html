@@ -382,7 +382,11 @@ async function pxSearch(fresh){
       const b=document.createElement("button"); b.type="button"; b.title=`${ph.alt||"Photo"} · ${ph.by} (${d.source||"Stock"})`;
       b.innerHTML=`<img src="${ph.thumb}" alt="${(ph.alt||"Stock photo").replace(/"/g,"")}" loading="lazy">`;
       b.onclick=async()=>{ if(b.classList.contains("added")) return; st.textContent="Adding photo…";
-        try{ const p=await loadRemote(ph.full); p.img._stock=true; p.credit=ph.by; S.photos.push(p); b.classList.add("added"); renderThumbs(); schedule(); st.className="status ok"; st.textContent=`Added (photo by ${ph.by}). Tap another one to add more.`; }
+        try{ const p=await loadRemote(ph.full); p.img._stock=true; p.credit=ph.by;
+          // Va justo después de la portada (y de otras de stock) para que aparezca en el carrusel enseguida.
+          const at=Math.min(S.photos.length, S.photos.length?1+S.photos.filter(q=>q.img._stock).length:0);
+          S.photos.splice(at,0,p); b.classList.add("added"); renderThumbs(); render();
+          st.className="status ok"; st.textContent=`Added as photo ${at+1} (by ${ph.by}). It's in the carousel now. Use ‹ › on the photo to move it.`; }
         catch(e){ st.textContent="Couldn't download that photo. Try another one."; } };
       $("pxGrid").appendChild(b);
     });
