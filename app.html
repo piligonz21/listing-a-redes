@@ -378,6 +378,10 @@ input[type=color]{width:100%;height:40px;padding:4px;border:1px solid var(--line
               <div><label for="mi_case">Títulos en</label><select id="mi_case"><option value="normal">Normal</option><option value="mayusculas">MAYÚSCULAS</option></select></div>
               <div class="full"><label for="mi_layout">Diseño</label><select id="mi_layout"></select></div>
               <div class="full"><label for="mi_overlay">La foto va</label><select id="mi_overlay"></select></div>
+              <div><label for="mi_align">Texto</label><select id="mi_align"><option value="centro">Centrado</option><option value="izquierda">A la izquierda</option></select></div>
+              <div><label for="mi_mix">Palabra destacada</label><select id="mi_mix"><option value="no">No</option><option value="cursiva">Última palabra en cursiva</option></select></div>
+              <div><label for="mi_tag">Operación (EN VENTA)</label><select id="mi_tag"><option value="texto">Texto chico</option><option value="caja">Etiqueta en recuadro</option></select></div>
+              <div><label for="mi_pill">Contacto</label><select id="mi_pill"><option value="no">Texto</option><option value="si">Botón redondeado</option></select></div>
               <div><label for="mi_top">Franja arriba</label><select id="mi_top"><option value="none">Sin franja</option><option value="lisa">Lisa</option><option value="difuminada">Con difuminado</option></select></div>
               <div><label for="mi_topc">Color franja arriba</label><input id="mi_topc" type="color"></div>
               <div><label for="mi_bot">Franja abajo</label><select id="mi_bot"><option value="none">Sin franja</option><option value="lisa">Lisa</option><option value="difuminada">Con difuminado</option></select></div>
@@ -1448,8 +1452,8 @@ renderTourRooms();
 /* ================= Mi marca: estilo propio, datos y pilares · Contenido del día ================= */
 const FONT_OPTS={"sans-moderna":{label:"Moderna (Montserrat)",t:F.mont(800),b:F.mont(500)},"sans-fina":{label:"Fina (Jost)",t:F.jost(300),b:F.jost(400)},
   "serif-elegante":{label:"Elegante (Cormorant)",t:F.corm(500),b:F.jost(400)},"serif-clasica":{label:"Clásica (Bodoni)",t:F.bod(400),b:F.jost(400)}};
-const LAYOUT_OPTS={"foto-completa":"Foto completa con texto encima","banda-abajo":"Foto arriba y franja de color","marco":"Foto con marco de color","tarjeta":"Foto con tarjeta de texto","arco":"Foto en arco sobre fondo liso"};
-const OVERLAY_OPTS={"degradado-oscuro":"Oscurecida abajo","sin-overlay":"Sin oscurecer","claro":"Aclarada"};
+const LAYOUT_OPTS={"foto-fundida":"Foto que se funde en el color de fondo","foto-completa":"Foto completa con texto encima","banda-abajo":"Foto arriba y franja de color","marco":"Foto con marco de color","tarjeta":"Foto con tarjeta de texto","arco":"Foto en arco sobre fondo liso"};
+const OVERLAY_OPTS={"degradado-oscuro":"Oscurecida abajo","teñida":"Teñida con el color de la marca","sin-overlay":"Sin oscurecer","claro":"Aclarada"};
 // Fichas de los estilos que ya vienen en la app, para armar placas de texto (contenido del día).
 const BUILTIN_TK={
   oscuro:{bg:"#2B1E17",surface:"#2B1E17",ink:"#F2EADF",muted:"#BFAF9F",accent:"#5A0F14",titleFont:"sans-moderna",titleCase:"normal",layout:"banda-abajo",overlay:"degradado-oscuro"},
@@ -1469,16 +1473,33 @@ const upc=(tk,s)=>tk.titleCase==="mayusculas"?String(s||"").toUpperCase():String
 
 // Bloque de texto centrado (antetítulo, título, bajada) dentro de una caja; mide primero y después dibuja.
 function textBox(x,W,tk,top,boxH,maxW,p,col,acc,big,bs=0.03){
-  const T=FONT_OPTS[tk.titleFont]||FONT_OPTS["sans-moderna"], cx=W/2, lh=bs*1.42;
-  const f=p.title?fit(x,upc(tk,p.title),maxW,3,W*(big?0.085:0.068),W*0.045,T.t):null;
+  const T=FONT_OPTS[tk.titleFont]||FONT_OPTS["sans-moderna"], left=tk.align==="izquierda", X=left?(W-maxW)/2:W/2, al=left?"left":"center", lh=bs*1.42;
+  let main=p.title?upc(tk,p.title):"", tail="";
+  if(main&&tk.mix==="cursiva"){ const w=main.trim().split(/\s+/); if(w.length>=3){ tail=w.pop(); main=w.join(" "); } }
+  const f=main?fit(x,main,maxW,3,W*(big?0.085:0.068),W*0.045,T.t):null, serif=F.corm(500,"italic");
+  const f2=tail?fit(x,tail,maxW,1,(f?f.size:W*0.07)*1.3,W*0.05,serif):null;
   x.font=T.b(W*bs); const bl=p.sub?wrap(x,p.sub,maxW).slice(0,5):[];
-  const eyH=p.eyebrow?W*0.055:0, ruleH=p.rule?W*0.04:0, tH=f?f.size*(0.85+(f.lines.length-1)*1.08):0, bH=bl.length?W*0.035+bl.length*W*lh:0;
+  const eyH=p.eyebrow?W*0.055:0, ruleH=p.rule?W*0.04:0, tH=(f?f.size*(0.85+(f.lines.length-1)*1.08):0)+(f2?f2.size*1.1:0), bH=bl.length?W*0.035+bl.length*W*lh:0;
   let y=top+Math.max(0,(boxH-(ruleH+eyH+tH+bH))/2);
-  if(p.rule){ x.fillStyle=acc; x.fillRect(cx-W*0.03,y,W*0.06,Math.max(3,W*0.005)); y+=ruleH; }
-  if(p.eyebrow){ x.fillStyle=acc; sfit(x,p.eyebrow.toUpperCase(),cx,y+W*0.03,4,maxW,F.jost(600),W*0.024); y+=eyH; }
-  if(f){ x.font=T.t(f.size); x.fillStyle=col; y=lines(x,f,cx,y+f.size*0.85,1.08,"center"); }
-  if(bl.length){ x.font=T.b(W*bs); x.fillStyle=col; x.globalAlpha=.9; x.textAlign="center"; bl.forEach((l,i)=>x.fillText(l,cx,y+W*(0.035+bs*1.1)+i*W*lh)); x.textAlign="left"; x.globalAlpha=1; }
+  if(p.rule){ x.fillStyle=acc; x.fillRect(left?X:X-W*0.03,y,W*0.06,Math.max(3,W*0.005)); y+=ruleH; }
+  if(p.eyebrow){ x.fillStyle=acc; sfit(x,p.eyebrow.toUpperCase(),X,y+W*0.03,left?2:4,maxW,F.jost(left?500:600),W*0.024,al); y+=eyH; }
+  if(f){ x.font=T.t(f.size); x.fillStyle=col; y=lines(x,f,X,y+f.size*0.85,1.08,al); }
+  if(f2){ x.font=serif(f2.size); x.fillStyle=readable(acc,lum(col)>.5?"#111111":"#FFFFFF"); x.textAlign=al; y+=f2.size*(f?1.12:0.85); x.fillText(f2.lines[0],X,y); x.textAlign="left"; }
+  if(bl.length){ x.font=T.b(W*bs); x.fillStyle=col; x.globalAlpha=.9; x.textAlign=al; bl.forEach((l,i)=>x.fillText(l,X,y+W*(0.035+bs*1.1)+i*W*lh)); x.textAlign="left"; x.globalAlpha=1; }
 }
+// Etiqueta en recuadro (EN VENTA), botón redondeado con el contacto, tinte de marca sobre la foto.
+function readable(c,bg){ let n=parseInt(c.slice(1),16), r=n>>16&255, g=n>>8&255, b=n&255; const to=lum(bg)<.4?255:0;
+  for(let i=0;i<8&&contrast(hex([r,g,b]),bg)<4.5;i++){ r+=(to-r)*0.25; g+=(to-g)*0.25; b+=(to-b)*0.25; } return hex([r,g,b]); }
+function tagBox(x,W,tk,text){ if(!text) return; const M=W*0.055, s=W*0.022; x.save(); x.font=F.jost(500)(s); const w=x.measureText(text.toUpperCase()).width+s*1.6;
+  x.fillStyle=lum(tk.bg)<.3?(lum(tk.muted)>.5?tk.muted:"#EEF1F8"):tk.bg; const ty=M*1.5; x.globalAlpha=.92; x.fillRect(M,ty,w,s*2); x.globalAlpha=1;
+  x.fillStyle=inkOn(x.fillStyle,{ink:tk.bg,bg:tk.ink,muted:tk.ink}); x.textBaseline="middle"; x.fillText(text.toUpperCase(),M+s*0.8,ty+s); x.restore(); }
+function pill(x,W,tk,cx,y,text,small,filled,align){ if(!text) return; x.save(); const s=W*(small?0.022:0.032); x.font=F.jost(600)(s);
+  const w=Math.min(W*0.86,x.measureText(text).width+s*2.6), h=s*2.3, lx=align==="left"?cx:align==="right"?cx-w:cx-w/2;
+  rrect(x,lx,y-h/2,w,h,h/2); const light=lum(tk.muted)>.45?tk.muted:"#E8EDF7";
+  if(filled){ x.fillStyle=lum(tk.bg)<.35?light:tk.accent; x.fill(); x.fillStyle=lum(tk.bg)<.35?tk.bg:"#FFFFFF"; } else { x.strokeStyle=lum(tk.bg)<.35?light:tk.ink; x.lineWidth=Math.max(2,W*0.002); x.stroke(); x.fillStyle=x.strokeStyle; }
+  x.textAlign="center"; x.textBaseline="middle"; x.fillText(text,lx+w/2,y+s*0.05); x.restore(); }
+function tint(x,W,H,tk,h){ if(tk.overlay!=="teñida") return; x.save(); x.globalAlpha=.42; x.fillStyle=tk.bg; x.fillRect(0,0,W,h||H); x.restore(); }
+function fadeTo(x,W,tk,y0,y1){ const n=parseInt(tk.bg.slice(1),16), rgb=`${n>>16&255},${n>>8&255},${n&255}`; const g=x.createLinearGradient(0,y0,0,y1); g.addColorStop(0,`rgba(${rgb},0)`); g.addColorStop(1,`rgba(${rgb},1)`); x.fillStyle=g; x.fillRect(0,y0,W,y1-y0+1); }
 // Franjas de color de la marca (arriba / abajo), lisas o con difuminado hacia la foto.
 function bandColor(tk,pos){ const b=tk[pos]; return b&&b.style&&b.style!=="none"?b:null; }
 function bands(x,W,H,tk){
@@ -1495,8 +1516,10 @@ function shadowed(x,on,W){ if(on){ x.shadowColor="rgba(0,0,0,0.55)"; x.shadowBlu
 function paint(x,W,H,tk,o){
   const M=W*0.07, cx=W/2, lay=tk.layout, T=FONT_OPTS[tk.titleFont]||FONT_OPTS["sans-moderna"];
   if(o.kind==="cover"||o.kind==="photo"){
-    const p={eyebrow:o.eyebrow,title:o.title,sub:o.sub,rule:true}, big=o.kind==="cover";
-    if(lay==="banda-abajo"){ const band=H*(o.sub?0.34:0.3); x.fillStyle=tk.surface; x.fillRect(0,0,W,H); coverFit(x,o.img,0,0,W,H-band); bands(x,W,H,tk);
+    const asTag=tk.tag==="caja"&&o.kind==="cover", p={eyebrow:asTag?"":o.eyebrow,title:o.title,sub:o.sub,rule:tk.align!=="izquierda"}, big=o.kind==="cover";
+    if(lay==="foto-fundida"){ x.fillStyle=tk.bg; x.fillRect(0,0,W,H); const ph=H*0.6; coverFit(x,o.img,0,0,W,ph); tint(x,W,H,tk,ph); fadeTo(x,W,tk,ph*0.55,ph); bands(x,W,H,tk);
+      textBox(x,W,tk,H*0.5,H*0.4,W-2*M,p,inkOn(tk.bg,tk),accOn(tk.bg,tk,tk.muted),big); }
+    else if(lay==="banda-abajo"){ const band=H*(o.sub?0.34:0.3); x.fillStyle=tk.surface; x.fillRect(0,0,W,H); coverFit(x,o.img,0,0,W,H-band); bands(x,W,H,tk);
       textBox(x,W,tk,H-band,band,W-2*M,p,inkOn(tk.surface,tk),accOn(tk.surface,tk,tk.muted),big); }
     else if(lay==="marco"){ const m=W*0.055, ph=H*0.62; x.fillStyle=tk.bg; x.fillRect(0,0,W,H); coverFit(x,o.img,m,m,W-2*m,ph); bands(x,W,H,tk);
       textBox(x,W,tk,m+ph,H-ph-2*m,W-2*M,p,inkOn(tk.bg,tk),accOn(tk.bg,tk,tk.muted),big); }
@@ -1506,21 +1529,24 @@ function paint(x,W,H,tk,o){
     else if(lay==="arco"){ x.fillStyle=tk.bg; x.fillRect(0,0,W,H); bands(x,W,H,tk); const th=H*0.32;
       textBox(x,W,tk,H*0.03,th,W-2*M,p,inkOn(tk.bg,tk),accOn(tk.bg,tk,tk.muted),big);
       const aw=W*0.72, ah=H-th-H*0.07; x.save(); arch(x,(W-aw)/2,th+H*0.02,aw,ah); x.clip(); coverFit(x,o.img,(W-aw)/2,th+H*0.02,aw,ah); x.restore(); }
-    else { coverFit(x,o.img,0,0,W,H); const light=tk.overlay==="claro";
+    else { coverFit(x,o.img,0,0,W,H); tint(x,W,H,tk); const light=tk.overlay==="claro";
       if(tk.overlay!=="sin-overlay") vgrad(x,H*0.38,H,light?"rgba(255,255,255,0)":"rgba(0,0,0,0)",light?"rgba(255,255,255,0.85)":"rgba(0,0,0,0.78)",W);
       bands(x,W,H,tk);
       const col=light?inkOn("#FFFFFF",tk):"#FFFFFF"; shadowed(x,tk.overlay==="sin-overlay",W);
       textBox(x,W,tk,H*0.56,H*0.38,W-2*M,p,col,light?accOn("#FFFFFF",tk,col):(lum(tk.accent)>.25?tk.accent:"#FFFFFF"),big); shadowed(x,false,W); }
-    if(o.kind==="cover"&&lay!=="arco") drawLogo(x,cx,W*0.045,W*0.3,W*0.075,"center");
+    if(asTag) tagBox(x,W,tk,o.eyebrow);
+    if(o.kind==="cover"&&lay!=="arco"){ if(tk.align==="izquierda") drawLogo(x,M,H-M*0.6-W*0.06,W*0.28,W*0.06,"left"); else drawLogo(x,cx,W*0.045,W*0.3,W*0.075,"center"); }
   } else if(o.kind==="text"){
     let bg=tk.bg, col;
-    if(o.img){ coverFit(x,o.img,0,0,W,H); x.fillStyle="rgba(0,0,0,0.58)"; x.fillRect(0,0,W,H); bg="#222222"; col="#FFFFFF"; }
+    if(o.img){ coverFit(x,o.img,0,0,W,H); tint(x,W,H,tk); x.fillStyle="rgba(0,0,0,0.5)"; x.fillRect(0,0,W,H); bg="#222222"; col="#FFFFFF"; }
     else { x.fillStyle=bg; x.fillRect(0,0,W,H); col=inkOn(bg,tk); }
     bands(x,W,H,tk);
     const acc=o.img?(lum(tk.accent)>.25?tk.accent:"#FFFFFF"):accOn(bg,tk,col);
-    if(o.num){ x.font=T.t(W*0.16); x.fillStyle=acc; x.textAlign="center"; x.fillText(o.num,cx,H*0.3); x.textAlign="left"; }
+    const lft=tk.align==="izquierda";
+    if(o.num){ x.font=T.t(W*0.16); x.fillStyle=acc; x.textAlign=lft?"left":"center"; x.fillText(o.num,lft?W*0.12:cx,H*0.3); x.textAlign="left"; }
     textBox(x,W,tk,H*0.33,H*0.52,W-2.4*M,{title:o.title,sub:o.sub},col,acc,false,0.042);
-    if(o.swipe){ x.font=F.jost(500)(W*0.024); x.fillStyle=col; x.globalAlpha=.7; x.textAlign="center"; x.fillText(o.swipe,cx,H-M*0.9); x.textAlign="left"; x.globalAlpha=1; }
+    if(o.swipe&&tk.pill==="si") pill(x,W,tk,W-M,H-M*1.1,o.swipe.toUpperCase(),true,false,"right");
+    else if(o.swipe){ x.font=F.jost(500)(W*0.024); x.fillStyle=col; x.globalAlpha=.7; x.textAlign="center"; x.fillText(o.swipe,cx,H-M*0.9); x.textAlign="left"; x.globalAlpha=1; }
   } else if(o.kind==="facts"){
     x.fillStyle=tk.bg; x.fillRect(0,0,W,H); bands(x,W,H,tk); const col=inkOn(tk.bg,tk), acc=accOn(tk.bg,tk,col);
     x.fillStyle=acc; sfit(x,(o.factsLabel||"").toUpperCase(),cx,M+W*0.06,6,W-2*M,F.jost(600),W*0.03);
@@ -1534,8 +1560,10 @@ function paint(x,W,H,tk,o){
     bands(x,W,H,tk);
     const top=o.img?M+ph:0, area=H-top-M-W*0.16;
     textBox(x,W,tk,top,area,W-2*M,{title:o.visit,sub:o.cta,rule:true},col,acc,true);
-    brandMark(x,{brand:o.brand},cx,H-M-W*0.15,"center",col,F.jost(600)(W*0.026),3,W*0.055);
-    if(o.handle){ x.fillStyle=acc; const fh=fit(x,o.handle,W-2*M,1,W*0.04,W*0.026,F.jost(600)); lines(x,fh,cx,H-M,1,"center"); }
+    const lft=tk.align==="izquierda";
+    brandMark(x,{brand:o.brand},lft?M:cx,H-M-W*0.15,lft?"left":"center",col,F.jost(600)(W*0.026),3,W*0.055);
+    if(o.handle&&tk.pill==="si") pill(x,W,tk,lft?M:cx,H-M-W*0.02,o.handle,false,true,lft?"left":"center");
+    else if(o.handle){ x.fillStyle=acc; const fh=fit(x,o.handle,W-2*M,1,W*0.04,W*0.026,F.jost(600)); lines(x,fh,lft?M:cx,H-M,1,lft?"left":"center"); }
   }
 }
 function setMine(tk){
@@ -1638,19 +1666,46 @@ function satOf(c){ const mx=Math.max(...c)/255, mn=Math.min(...c)/255; return mx
 // Busca franjas de color arriba o abajo que se repiten en los ejemplos (lisas o que se difuminan hacia la foto).
 function detectBand(imgs,top){
   const found=imgs.map(im=>{ const w=48, h=96, c=canvas(w,h), x=c.getContext("2d"); x.drawImage(im,0,0,w,h); const d=x.getImageData(0,0,w,h).data;
-    const row=y=>{ y=top?y:h-1-y; let m=[0,0,0]; for(let i=0;i<w;i++) for(let k=0;k<3;k++) m[k]+=d[(y*w+i)*4+k]/w;
-      let sd=0; for(let i=0;i<w;i++){ let e=0; for(let k=0;k<3;k++) e+=(d[(y*w+i)*4+k]-m[k])**2; sd+=Math.sqrt(e)/w; } return {m,sd}; };
-    const r0=row(0); if(r0.sd>14) return null;
-    const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
-    let solid=0; while(solid<h*0.4){ const r=row(solid); if(r.sd>14||dist(r.m,r0.m)>22) break; solid++; }
-    let fade=solid; while(fade<h*0.6){ const r=row(fade); if(dist(r.m,r0.m)>70||r.sd>45) break; fade++; }
-    if(solid<h*0.03&&fade-solid<h*0.06) return null;
-    return {color:hex(r0.m), h:solid/h, fade:(fade-solid)/h}; }).filter(Boolean);
+    const px=(y,i)=>{ y=top?y:h-1-y; const k=(y*w+i)*4; return [d[k],d[k+1],d[k+2]]; }, dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+    // color del borde: el más repetido en la primera fila
+    const r0=[]; for(let i=0;i<w;i++) r0.push(px(0,i)); const base=r0.map(p=>[p,r0.filter(q=>dist(p,q)<20).length]).sort((a,b)=>b[1]-a[1])[0];
+    if(base[1]<w*0.7) return null; const B=base[0];
+    const frac=y=>{ let n=0; for(let i=0;i<w;i++) if(dist(px(y,i),B)<34) n++; return n/w; };
+    // la franja sigue mientras la mayoría de la fila sea de ese color (aunque tenga texto encima)
+    let solid=0; while(solid<h*0.75&&frac(solid)>0.5) solid++;
+    const near=y=>{ let m=[0,0,0]; for(let i=0;i<w;i++){ const p=px(y,i); m[0]+=p[0]/w; m[1]+=p[1]/w; m[2]+=p[2]/w; } return dist(m,B); };
+    let fade=solid; while(fade<h*0.85&&near(fade)<75) fade++;
+    if(solid<h*0.03) return null;
+    return {color:hex(B), h:solid/h, fade:(fade-solid)/h}; }).filter(Boolean);
   if(found.length<Math.max(1,Math.ceil(imgs.length/2))) return {style:"none"};
   const c0=found[0].color, same=found.filter(f=>contrast(f.color,c0)<1.35);
   if(same.length<Math.max(1,Math.ceil(imgs.length/2))) return {style:"none"};
   const med=a=>a.sort((p,q)=>p-q)[a.length>>1], fh=med(same.map(f=>f.h)), ff=med(same.map(f=>f.fade));
-  return {style:ff>0.05?"difuminada":"lisa", color:c0, h:Math.max(0.04,Math.min(0.25,fh||0.06)), fade:Math.max(0.06,Math.min(0.3,ff||0.12))};
+  return {style:ff>0.04?"difuminada":"lisa", color:c0, h:Math.max(0.04,Math.min(0.6,fh||0.06)), fade:Math.max(0.06,Math.min(0.3,ff||0.12))};
+}
+// Píxeles de texto sobre el fondo: de ahí salen la alineación y los colores de títulos y detalles.
+function textPixels(imgs,bg,y0,y1){
+  const n=parseInt(bg.slice(1),16), B=[n>>16&255,n>>8&255,n&255], rows=[], cols=[];
+  imgs.forEach(im=>{ const w=240,h=300,c=canvas(w,h),x=c.getContext("2d"); x.drawImage(im,0,0,w,h); const d=x.getImageData(0,0,w,h).data;
+    for(let y=Math.floor(h*y0);y<Math.floor(h*y1);y++){ let L=-1,R=-1,bgn=0; const row=[];
+      for(let i=0;i<w;i++){ const k=(y*w+i)*4, p=[d[k],d[k+1],d[k+2]], dd=Math.hypot(p[0]-B[0],p[1]-B[1],p[2]-B[2]); if(dd<40) bgn++; if(dd>110){ row.push(p); if(L<0) L=i; R=i; } }
+      if(bgn>w*0.45&&row.length>=2&&row.length<w*0.6){ rows.push([L/w,R/w]); cols.push(...row); } } });
+  return {rows,cols};
+}
+function detectAlign(imgs,bg,y0){
+  const {rows}=textPixels(imgs,bg,y0||0.45,0.95); if(rows.length<8) return "centro";
+  const L=rows.map(r=>r[0]), C=rows.map(r=>(r[0]+r[1])/2);
+  const mode=L.reduce((best,v)=>{ const n=L.filter(u=>Math.abs(u-v)<=0.02).length; return n>best[1]?[v,n]:best; },[0,0]);
+  const fL=mode[1]/L.length, fC=C.filter(c=>Math.abs(c-0.5)<=0.03).length/C.length;
+  return (fL>0.35&&fL>fC*1.5&&mode[0]<0.3)?"izquierda":"centro";
+}
+function textColors(imgs,bg,y0){
+  const {cols}=textPixels(imgs,bg,y0||0.45,0.95); if(cols.length<30) return null;
+  const dark=lum(bg)<0.35, L=p=>0.299*p[0]+0.587*p[1]+0.114*p[2];
+  cols.sort((a,b)=>dark?L(b)-L(a):L(a)-L(b)); const top=cols.slice(0,Math.max(5,Math.floor(cols.length*0.08)));
+  const avg=a=>[0,1,2].map(k=>a.reduce((s,p)=>s+p[k],0)/a.length), ink=avg(top);
+  const rest=cols.filter(p=>Math.hypot(p[0]-ink[0],p[1]-ink[1],p[2]-ink[2])>45&&satOf(p)>0.12);
+  return {ink:hex(ink), accent:rest.length>cols.length*0.05?hex(avg(rest)):null};
 }
 // Sin IA: saca la paleta de los ejemplos (colores que más se repiten, fondo según los bordes).
 function guessStyle(imgs){
@@ -1666,9 +1721,16 @@ function guessStyle(imgs){
   const ink=(cand.slice().sort((a,b)=>contrast(b.c,bg)-contrast(a.c,bg))[0]||{c:lum(bg)>.4?"#111111":"#FFFFFF"}).c;
   const acc=cand.filter(o=>o.c!==ink).sort((a,b)=>b.sat*Math.sqrt(b.sh)-a.sat*Math.sqrt(a.sh))[0];
   const edgeShare=Math.max(...ec)/edge.length;
-  return {name:"Mi estilo", summary:"", bg, surface:bg, ink:contrast(ink,bg)>=3?ink:(lum(bg)>.4?"#111111":"#FFFFFF"), muted:ink, accent:acc&&acc.sat>0.2?acc.c:ink,
+  const tk={name:"Mi estilo", summary:"", bg, surface:bg, ink:contrast(ink,bg)>=3?ink:(lum(bg)>.4?"#111111":"#FFFFFF"), muted:ink, accent:acc&&acc.sat>0.2?acc.c:ink,
     titleFont:"sans-moderna", titleCase:"normal", layout:edgeShare>0.55?"marco":"foto-completa", overlay:"degradado-oscuro",
-    topBand:detectBand(imgs,true), bottomBand:detectBand(imgs,false)};
+    topBand:detectBand(imgs,true), bottomBand:detectBand(imgs,false), align:"centro", mix:"no", tag:"texto", pill:"no"};
+  // Foto arriba que se funde en un color liso abajo (donde va el texto)
+  const bb=tk.bottomBand; if(bb&&bb.style!=="none"&&bb.h>=0.18){ tk.layout="foto-fundida"; tk.bg=tk.surface=bb.color; tk.bottomBand={style:"none"};
+    if(contrast(tk.ink,tk.bg)<3) tk.ink=lum(tk.bg)>.4?"#111111":"#FFFFFF"; if(contrast(tk.accent,tk.bg)<2) tk.accent=tk.ink; }
+  const ty=tk.layout==="foto-fundida"?Math.max(0.4,1-(bb&&bb.h||0.5)):0.45;
+  tk.align=detectAlign(imgs,tk.bg,ty);
+  const tc=textColors(imgs,tk.bg,ty); if(tc){ if(contrast(tc.ink,tk.bg)>=3) tk.ink=tc.ink; if(tc.accent&&contrast(tc.accent,tk.bg)>=2.5){ tk.accent=tc.accent; tk.muted=tc.accent; } }
+  return tk;
 }
 function smallJpeg(img,max){ const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)), c=canvas(Math.round(img.naturalWidth*s),Math.round(img.naturalHeight*s)); c.getContext("2d").drawImage(img,0,0,c.width,c.height); return c.toDataURL("image/jpeg",0.82); }
 $("obAnalyze").onclick=async()=>{
@@ -1687,16 +1749,18 @@ function fillMiForm(){
   $("miEdit").hidden=!MI_TK; if(!MI_TK) return;
   $("mi_name").value=MI_TK.name||"Mi estilo"; ["bg","surface","ink","accent"].forEach(k=>$("mi_"+k).value=MI_TK[k]);
   $("mi_font").value=MI_TK.titleFont; $("mi_layout").value=MI_TK.layout; $("mi_case").value=MI_TK.titleCase; $("mi_overlay").value=MI_TK.overlay;
+  $("mi_align").value=MI_TK.align||"centro"; $("mi_mix").value=MI_TK.mix||"no"; $("mi_tag").value=MI_TK.tag||"texto"; $("mi_pill").value=MI_TK.pill||"no";
   const tb=MI_TK.topBand||{style:"none"}, bb=MI_TK.bottomBand||{style:"none"};
   $("mi_top").value=tb.style||"none"; $("mi_topc").value=tb.color||MI_TK.bg; $("mi_bot").value=bb.style||"none"; $("mi_botc").value=bb.color||MI_TK.bg;
   $("mi_bandh").value=Math.round(((tb.style!=="none"?tb.h:bb.h)||0.08)*100);
 }
 const fillSel=(id,o)=>{ $(id).innerHTML=Object.entries(o).map(([k,v])=>`<option value="${k}">${typeof v==="string"?v:v.label}</option>`).join(""); };
 fillSel("mi_font",FONT_OPTS); fillSel("mi_layout",LAYOUT_OPTS); fillSel("mi_overlay",OVERLAY_OPTS);
-["mi_name","mi_bg","mi_surface","mi_ink","mi_accent","mi_font","mi_layout","mi_case","mi_overlay","mi_top","mi_topc","mi_bot","mi_botc","mi_bandh"].forEach(id=>$(id).addEventListener("input",()=>{
+["mi_name","mi_bg","mi_surface","mi_ink","mi_accent","mi_font","mi_layout","mi_case","mi_overlay","mi_align","mi_mix","mi_tag","mi_pill","mi_top","mi_topc","mi_bot","mi_botc","mi_bandh"].forEach(id=>$(id).addEventListener("input",()=>{
   if(!MI_TK) return; const bh=parseInt($("mi_bandh").value,10)/100;
   const t={...MI_TK, name:$("mi_name").value.trim()||"Mi estilo", bg:$("mi_bg").value, surface:$("mi_surface").value, ink:$("mi_ink").value, accent:$("mi_accent").value,
     muted:$("mi_ink").value, titleFont:$("mi_font").value, layout:$("mi_layout").value, titleCase:$("mi_case").value, overlay:$("mi_overlay").value,
+    align:$("mi_align").value, mix:$("mi_mix").value, tag:$("mi_tag").value, pill:$("mi_pill").value,
     topBand:{...(MI_TK.topBand||{}),style:$("mi_top").value,color:$("mi_topc").value,h:bh}, bottomBand:{...(MI_TK.bottomBand||{}),style:$("mi_bot").value,color:$("mi_botc").value,h:bh}};
   setMine(t); S.style="mi"; markStyle(); brandPreview(); if(DL.post) dailyRender(); }));
 let bpT=null;
