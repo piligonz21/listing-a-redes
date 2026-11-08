@@ -155,13 +155,13 @@ figcaption button{padding:4px 9px;font-size:12px}
         <input id="photoInput" type="file" accept="image/*" multiple hidden>
         <div id="thumbs" class="thumbs"></div>
         <details id="pexels" class="pexels">
-          <summary>Missing photos? Search free stock photos (Pexels)</summary>
+          <summary>Missing photos? Search free stock photos</summary>
           <div class="row" style="flex-wrap:nowrap;margin-top:10px"><input id="pxQ" type="search" placeholder="e.g. modern living room, pool, kitchen"><button id="pxGo" class="primary">Search</button></div>
           <div class="row chips" id="pxChips"></div>
           <p class="status" id="pxStatus">These are illustrative photos, not of the property: the slide is marked “Illustrative image”.</p>
           <div id="pxGrid" class="pxgrid"></div>
           <button id="pxMore" hidden>Load more</button>
-          <p class="pxcredit">Photos from <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a></p>
+          <p class="pxcredit" id="pxCredit">Free stock photos</p>
         </details>
       </section>
 
@@ -341,7 +341,7 @@ function renderThumbs(){
   const box=$("thumbs"); box.innerHTML="";
   S.photos.forEach((p,i)=>{
     const d=document.createElement("div"); d.className="thumb"+(i===0?" cover":"");
-    d.innerHTML=`<img src="${p.url}" alt="Photo ${i+1}">${i===0?'<span class="tag">Cover</span>':""}${p.img._stock?'<span class="stock">Pexels</span>':""}${!p.img._stock&&Math.max(p.img.naturalWidth,p.img.naturalHeight)<1000?'<span class="lowres" title="This photo is small in the listing. Upload the original for better quality.">Low resolution</span>':""}<button class="x" aria-label="Remove photo ${i+1}">×</button><div class="mv"><button aria-label="Move earlier">‹</button><button aria-label="Move later">›</button></div>`;
+    d.innerHTML=`<img src="${p.url}" alt="Photo ${i+1}">${i===0?'<span class="tag">Cover</span>':""}${p.img._stock?'<span class="stock">Stock</span>':""}${!p.img._stock&&Math.max(p.img.naturalWidth,p.img.naturalHeight)<1000?'<span class="lowres" title="This photo is small in the listing. Upload the original for better quality.">Low resolution</span>':""}<button class="x" aria-label="Remove photo ${i+1}">×</button><div class="mv"><button aria-label="Move earlier">‹</button><button aria-label="Move later">›</button></div>`;
     d.querySelector(".x").onclick=()=>{S.photos.splice(i,1);renderThumbs();schedule();};
     const [l,r]=d.querySelectorAll(".mv button");
     l.onclick=()=>{ if(i>0){[S.photos[i-1],S.photos[i]]=[S.photos[i],S.photos[i-1]];renderThumbs();schedule();} };
@@ -360,9 +360,10 @@ async function pxSearch(fresh){
   try{
     const r=await fetch(`/api/pexels?q=${encodeURIComponent(q)}&page=${pxPage}`); if(r.status===401){ location.href="/"; return; }
     const d=await r.json(); if(d.error){ st.textContent=d.error; return; }
+    if(d.source) $("pxCredit").innerHTML=`Photos from <a href="https://${d.source.toLowerCase()}.com" target="_blank" rel="noopener">${d.source}</a>`;
     if(!d.photos.length&&fresh){ st.textContent="No photos found. Try other words."; return; }
     d.photos.forEach(ph=>{
-      const b=document.createElement("button"); b.type="button"; b.title=`${ph.alt||"Photo"} · ${ph.by} (Pexels)`;
+      const b=document.createElement("button"); b.type="button"; b.title=`${ph.alt||"Photo"} · ${ph.by} (${d.source||"Stock"})`;
       b.innerHTML=`<img src="${ph.thumb}" alt="${(ph.alt||"Stock photo").replace(/"/g,"")}" loading="lazy">`;
       b.onclick=async()=>{ if(b.classList.contains("added")) return; st.textContent="Adding photo…";
         try{ const p=await loadRemote(ph.full); p.img._stock=true; p.credit=ph.by; S.photos.push(p); b.classList.add("added"); renderThumbs(); schedule(); st.className="status ok"; st.textContent=`Added (photo by ${ph.by}). Tap another one to add more.`; }
@@ -370,7 +371,7 @@ async function pxSearch(fresh){
       $("pxGrid").appendChild(b);
     });
     $("pxMore").hidden=!d.more; st.className="status"; st.textContent="Tap the photos you want to add. They are illustrative, so the slide is marked “Illustrative image”.";
-  }catch(e){ st.textContent="Couldn't search Pexels. Try again."; }
+  }catch(e){ st.textContent="Couldn't search for photos. Try again."; }
   finally{ $("pxGo").disabled=false; }
 }
 $("pxGo").onclick=()=>pxSearch(true);
