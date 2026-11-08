@@ -32,7 +32,7 @@ header.top p{margin:6px 0 0;color:var(--muted);max-width:60ch}
 h2{font-family:var(--display);font-weight:500;font-size:20px;margin:0 0 14px;letter-spacing:-.01em}
 label{display:block;font-size:13px;font-weight:600;margin:0 0 4px}
 .hint{font-size:12.5px;color:var(--muted);margin:4px 0 0}
-input[type=text],input[type=url],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);padding:10px 12px}
+input[type=text],input[type=url],input[type=search],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);padding:10px 12px}
 textarea{resize:vertical;min-height:90px}
 input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -102,6 +102,20 @@ figcaption button{padding:4px 9px;font-size:12px}
 #tourFrame{display:block;width:100%;height:560px;border:1px solid var(--line);margin-top:12px;background:#111}
 .reelbox canvas,.reelbox video{display:block;width:100%;max-width:300px;aspect-ratio:9/16;margin-top:12px;background:#000;border:1px solid var(--line)}
 .foot{margin-top:28px;font-size:12px;color:var(--muted)}
+.nav{display:flex;flex-wrap:wrap;gap:6px;margin:-8px 0 20px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.nav button{border-color:transparent;font-size:15px}
+.nav button[aria-current="page"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.nav .ghost{margin-left:auto;color:var(--muted);font-size:13px}
+.welcome{max-width:720px;margin:0 auto;text-align:center;padding:40px 24px}
+.welcome h2{font-size:clamp(24px,3.4vw,34px);margin-bottom:10px}
+.welcome .row{justify-content:center;margin-top:20px}
+.big{padding:14px 20px;font-size:16px}
+.chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.slide-ed{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.slide-ed textarea{min-height:56px}
+.pxgrid button[data-n]:not([data-n=""])::before{content:attr(data-n);position:absolute;left:0;right:0;bottom:0;background:var(--accent);color:#fff;font-size:10px;font-weight:700;text-align:center;z-index:1}
+input[type=color]{width:100%;height:40px;padding:4px;border:1px solid var(--line);background:var(--field)}
+@media (min-width:901px){.sticky{position:sticky;top:12px}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -111,9 +125,17 @@ figcaption button{padding:4px 9px;font-size:12px}
   <header class="top">
     <div>
       <h1>Listing to Social</h1>
-      <p>Pegá el aviso de una propiedad, subí las fotos y bajá el carrusel 4:5, las historias, la portada del reel y un reel animado, con el caption listo para copiar.</p>
+      <p>Contenido para Instagram con el estilo de tu marca: desde el link de una propiedad o con una idea del día según tus temas.</p>
     </div>
   </header>
+  <nav class="nav" aria-label="Secciones">
+    <button data-sec="link" aria-current="page">Desde un link</button>
+    <button data-sec="daily">Contenido del día</button>
+    <button data-sec="brand">Mi marca</button>
+    <button id="logout2" class="ghost">Salir</button>
+  </nav>
+
+  <div id="sec-link">
 
   <div class="grid">
     <div>
@@ -165,15 +187,6 @@ figcaption button{padding:4px 9px;font-size:12px}
         <div id="drop" class="drop" tabindex="0" role="button" aria-label="Subir fotos">Tocá para elegir fotos o arrastralas acá<br><small>La primera es la portada. Usá ‹ › para ordenarlas.</small></div>
         <input id="photoInput" type="file" accept="image/*" multiple hidden>
         <div id="thumbs" class="thumbs"></div>
-        <details id="pexels" class="pexels">
-          <summary>¿Te faltan fotos? Buscá fotos de stock gratis</summary>
-          <div class="row" style="flex-wrap:nowrap;margin-top:10px"><input id="pxQ" type="search" placeholder="Ej: living moderno, pileta, cocina"><button id="pxGo" class="primary">Buscar</button></div>
-          <div class="row chips" id="pxChips"></div>
-          <p class="status" id="pxStatus">Son fotos ilustrativas, no de la propiedad: en la placa se marca “Imagen ilustrativa”.</p>
-          <div id="pxGrid" class="pxgrid"></div>
-          <button id="pxMore" hidden>Ver más</button>
-          <p class="pxcredit" id="pxCredit">Fotos de stock gratis</p>
-        </details>
       </section>
 
       <section class="panel">
@@ -282,6 +295,121 @@ figcaption button{padding:4px 9px;font-size:12px}
         <div id="saveStatus" class="status" role="status"></div>
       </section>
       <p class="foot"><button id="logout" style="padding:6px 10px;font-size:12px">Salir</button> Los diseños se arman en tu navegador. Usá solo fotos que tengas permiso de publicar. Hecho por GSC Studio.</p>
+    </div>
+  </div>
+  </div>
+
+  <div id="sec-daily" hidden>
+    <div class="grid">
+      <div>
+        <section class="panel">
+          <p class="step">Paso 1</p>
+          <h2>¿De qué hablamos hoy?</h2>
+          <div id="dlPillars" class="row chips"></div>
+          <p class="hint">Son tus pilares de contenido. Cambialos en Mi marca.</p>
+          <div class="row" style="margin-top:12px"><button id="dlGo" class="primary">Generar contenido del día</button><button id="dlAgain">Otra idea</button></div>
+          <div id="dlStatus" class="status" role="status"></div>
+        </section>
+        <section class="panel">
+          <p class="step">Paso 2</p>
+          <h2>Textos</h2>
+          <div class="stack">
+            <div><label for="dlTitle">Portada</label><input id="dlTitle" type="text"></div>
+            <div id="dlSlides"></div>
+            <div><label for="dlCta">Cierre</label><input id="dlCta" type="text"></div>
+          </div>
+        </section>
+        <section class="panel">
+          <p class="step">Paso 3</p>
+          <h2>Fotos de stock</h2>
+          <div class="row" style="flex-wrap:nowrap"><input id="pxQ" type="search" placeholder="Ej: casa moderna, llaves, ciudad"><button id="pxGo" class="primary">Buscar</button></div>
+          <div class="row chips" id="pxChips"></div>
+          <p class="status" id="pxStatus">La primera foto que tocás va en la portada. Las que sigas tocando van de fondo en las placas.</p>
+          <div id="pxGrid" class="pxgrid"></div>
+          <button id="pxMore" hidden>Ver más</button>
+          <p class="pxcredit" id="pxCredit">Fotos de stock gratis</p>
+        </section>
+      </div>
+      <div>
+        <section class="panel">
+          <h2>Tu carrusel del día</h2>
+          <p class="hint" style="margin:-8px 0 12px">Usa el estilo elegido en Mi marca. Para probar otro, cambialo en Mi marca o en el paso 4 de Desde un link.</p>
+          <div id="dlOut" class="out feed"></div>
+          <h2 style="margin:24px 0 12px">Historia</h2>
+          <div id="dlStory" class="out tall"></div>
+          <div class="row" style="justify-content:space-between;margin-top:24px"><h2 style="margin:0">Caption</h2><button data-copy="dlCap">Copiar</button></div>
+          <div id="dlCap" class="copybox" style="margin-top:10px"></div>
+        </section>
+        <section class="saveall"><button id="dlSave" class="primary">Guardar todo</button></section>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec-brand" hidden>
+    <section class="panel welcome" id="obAsk">
+      <p class="step">Bienvenida</p>
+      <h2>¿Ya tenés contenido hecho en Instagram?</h2>
+      <p class="hint" style="font-size:15px">Si ya tenés un estilo, mostrámelo: lo copio lo más parecido posible y queda guardado como “Mi estilo”, así todo lo que armes se ve como tu marca.</p>
+      <div class="row"><button id="obYes" class="primary big">Sí, te muestro ejemplos</button><button id="obNo" class="big">No, empiezo de cero</button></div>
+    </section>
+    <div id="brandBody">
+      <div class="grid">
+        <div>
+          <section class="panel" id="obCopy">
+            <p class="step">Tu estilo</p>
+            <h2>Copiá el estilo de tu Instagram</h2>
+            <p class="hint" style="margin:-8px 0 12px">Subí 2 a 4 publicaciones tuyas o capturas de tu perfil. Copio los colores, la tipografía y cómo ubicás el texto.</p>
+            <div id="obDrop" class="drop" tabindex="0" role="button" aria-label="Subir ejemplos de tu marca">Tocá para elegir imágenes o arrastralas acá</div>
+            <input id="obInput" type="file" accept="image/*" multiple hidden>
+            <div id="obThumbs" class="thumbs"></div>
+            <div class="row" style="margin-top:12px"><button id="obAnalyze" class="primary" disabled>Copiar mi estilo</button></div>
+            <div id="obStatus" class="status" role="status"></div>
+          </section>
+          <section class="panel" id="miEdit" hidden>
+            <p class="step">Mi estilo</p>
+            <h2>Ajustá lo que haga falta</h2>
+            <div class="fields">
+              <div class="full"><label for="mi_name">Nombre del estilo</label><input id="mi_name" type="text"></div>
+              <div><label for="mi_bg">Fondo</label><input id="mi_bg" type="color"></div>
+              <div><label for="mi_surface">Franjas y tarjetas</label><input id="mi_surface" type="color"></div>
+              <div><label for="mi_ink">Títulos</label><input id="mi_ink" type="color"></div>
+              <div><label for="mi_accent">Detalles</label><input id="mi_accent" type="color"></div>
+              <div><label for="mi_font">Tipografía</label><select id="mi_font"></select></div>
+              <div><label for="mi_case">Títulos en</label><select id="mi_case"><option value="normal">Normal</option><option value="mayusculas">MAYÚSCULAS</option></select></div>
+              <div class="full"><label for="mi_layout">Diseño</label><select id="mi_layout"></select></div>
+              <div class="full"><label for="mi_overlay">La foto va</label><select id="mi_overlay"></select></div>
+            </div>
+          </section>
+          <section class="panel">
+            <p class="step">Tu marca</p>
+            <h2>Datos de tu marca</h2>
+            <div class="fields">
+              <div><label for="b_brand">Marca / inmobiliaria</label><input id="b_brand" type="text"></div>
+              <div><label for="b_handle">@ o WhatsApp</label><input id="b_handle" type="text"></div>
+              <div class="full"><label for="b_city">Zona donde trabajás</label><input id="b_city" type="text" placeholder="Ej: Zona Norte, GBA"></div>
+              <div class="full"><label for="b_cta">Llamado a la acción</label><input id="b_cta" type="text" placeholder="Escribinos por DM y coordinamos tu visita"></div>
+              <div class="full"><label for="b_logo">Logo (PNG con fondo transparente)</label>
+                <div class="row"><input id="b_logo" type="file" accept="image/*"><button id="b_logoClear" hidden>Quitar logo</button></div></div>
+            </div>
+          </section>
+          <section class="panel">
+            <p class="step">Pilares</p>
+            <h2>Tus pilares de contenido</h2>
+            <p class="hint" style="margin:-8px 0 10px">Los temas de los que hablás. Con esto armo el contenido del día. Tocá los que usás.</p>
+            <div id="pillarChips" class="row chips"></div>
+            <div class="row" style="flex-wrap:nowrap;margin-top:10px"><input id="pillarNew" type="text" placeholder="Sumar otro tema"><button id="pillarAdd">Sumar</button></div>
+          </section>
+          <section class="saveall"><button id="brandSave" class="primary">Guardar mi marca</button><div id="brandStatus" class="status" role="status"></div></section>
+        </div>
+        <div>
+          <section class="panel sticky">
+            <h2>Estilo que vas a usar</h2>
+            <div class="styles" id="brandStyles"></div>
+            <h2 style="margin:20px 0 12px">Así se ven tus placas</h2>
+            <div id="miPrevBox" class="out tall"></div>
+          </section>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -410,38 +538,6 @@ function renderThumbs(){
   });
   renderTourRooms();
 }
-/* ---------- fotos de stock (Pexels) ---------- */
-const PX_CHIPS=["fachada casa moderna","living moderno","cocina moderna","dormitorio","baño moderno","pileta","jardín","departamento","vista ciudad","oficina"];
-let pxPage=1, pxLast="";
-PX_CHIPS.forEach(t=>{const b=document.createElement("button"); b.type="button"; b.textContent=t; b.onclick=()=>{$("pxQ").value=t; pxSearch(true);}; $("pxChips").appendChild(b);});
-async function pxSearch(fresh){
-  const q=$("pxQ").value.trim(), st=$("pxStatus"); if(!q){ st.textContent="Escribí qué foto buscás."; return; }
-  if(fresh){ pxPage=1; $("pxGrid").innerHTML=""; } pxLast=q;
-  st.className="status"; st.textContent="Buscando…"; $("pxGo").disabled=true;
-  try{
-    const r=await fetch(`/api/pexels?q=${encodeURIComponent(q)}&page=${pxPage}`); if(r.status===401){ location.href="/"; return; }
-    const d=await r.json(); if(d.error){ st.textContent=d.error; return; }
-    if(d.source) $("pxCredit").innerHTML=`Fotos de <a href="https://${d.source.toLowerCase()}.com" target="_blank" rel="noopener">${d.source}</a>`;
-    if(!d.photos.length&&fresh){ st.textContent="No encontré fotos. Probá con otras palabras."; return; }
-    d.photos.forEach(ph=>{
-      const b=document.createElement("button"); b.type="button"; b.title=`${ph.alt||"Foto"} · ${ph.by} (${d.source||"Stock"})`;
-      b.innerHTML=`<img src="${ph.thumb}" alt="${(ph.alt||"Foto de stock").replace(/"/g,"")}" loading="lazy">`;
-      b.onclick=async()=>{ if(b.classList.contains("added")) return; st.textContent="Agregando foto…";
-        try{ const p=await loadRemote(ph.full); p.img._stock=true; p.credit=ph.by;
-          // Va justo después de la portada (y de otras de stock) para que aparezca en el carrusel enseguida.
-          const at=Math.min(S.photos.length, S.photos.length?1+S.photos.filter(q=>q.img._stock).length:0);
-          S.photos.splice(at,0,p); b.classList.add("added"); renderThumbs(); render();
-          st.className="status ok"; st.textContent=`Agregada como foto ${at+1} (de ${ph.by}). Ya está en el carrusel. Movela con ‹ › si querés.`; }
-        catch(e){ st.textContent="No pude bajar esa foto. Probá con otra."; } };
-      $("pxGrid").appendChild(b);
-    });
-    $("pxMore").hidden=!d.more; st.className="status"; st.textContent="Tocá las fotos que quieras sumar. Son ilustrativas: en la placa se marca “Imagen ilustrativa”.";
-  }catch(e){ st.textContent="No pude buscar fotos. Probá de nuevo."; }
-  finally{ $("pxGo").disabled=false; }
-}
-$("pxGo").onclick=()=>pxSearch(true);
-$("pxQ").onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); pxSearch(true); } };
-$("pxMore").onclick=()=>{ pxPage++; $("pxQ").value=pxLast; pxSearch(false); };
 
 $("logoInput").onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ S.logo=(await loadImg(f)).img; $("logoClear").hidden=false; schedule(); }catch(err){} };
 $("logoClear").onclick=()=>{S.logo=null;$("logoInput").value="";$("logoClear").hidden=true;schedule();};
@@ -754,7 +850,7 @@ function stockTag(x,W,H){
 // Firma chica arriba de cada placa: nombre + @ o WhatsApp
 function signature(x,W,H,style,k,b){
   const txt=[b.brand,b.handle].filter(Boolean).join("   ·   ").toUpperCase(); if(!txt) return;
-  const dark=k==="facts"&&(style==="oscuro"||style==="sold");
+  const dark=k==="facts"&&(style==="oscuro"||style==="sold"||(style==="mi"&&MI_TK&&lum(MI_TK.bg)>0.4));
   x.save(); x.fillStyle=dark?"#2B2B2B":"#FFFFFF";
   if(!dark){ x.shadowColor="rgba(0,0,0,0.55)"; x.shadowBlur=W*0.012; }
   sfit(x,txt,W/2,H*0.035+W*0.012,3,W*0.86,F.jost(500),W*0.021); x.restore();
@@ -783,17 +879,11 @@ function render(){
 
 /* ---------- selector de estilos con vista previa ---------- */
 const stylesEl = $("styles");
-Object.entries(STYLES).forEach(([k,v])=>{
-  const b=document.createElement("button"); b.type="button"; b.className="style-opt"; b.dataset.k=k;
-  b.innerHTML=`<img alt="Vista previa del estilo ${v.name}"><b>${v.name}</b>`;
-  b.onclick=()=>{S.style=k; markStyle(); schedule();};
-  stylesEl.appendChild(b);
-});
-function markStyle(){stylesEl.querySelectorAll(".style-opt").forEach(b=>b.setAttribute("aria-pressed", b.dataset.k===S.style)); $("accentWrap").hidden=S.style!=="oscuro";}
-markStyle();
+function markStyle(){document.querySelectorAll(".style-opt").forEach(b=>b.setAttribute("aria-pressed", b.dataset.k===S.style)); $("accentWrap").hidden=S.style!=="oscuro";}
 function previews(base){
-  stylesEl.querySelectorAll(".style-opt").forEach(b=>{
-    const big=piece(b.dataset.k,1080,1350,"cover",base,{img:photo(0),img2:photo(1)});
+  document.querySelectorAll(".style-opt").forEach(b=>{
+    if(!STYLES[b.dataset.k]) return;
+    const big=piece(b.dataset.k,1080,1350,"cover",base,{img:photo(0)||demoImg(),img2:photo(1)||demoImg()});
     const sm=canvas(270,338); const sx=sm.getContext("2d"); sx.imageSmoothingQuality="high"; sx.drawImage(big,0,0,270,338);
     b.querySelector("img").src=sm.toDataURL("image/jpeg",0.8);
   });
@@ -1349,6 +1439,377 @@ $("btnTourShare").onclick=async()=>{ if(!tourReady()) return; busy(true); const 
 $("tourLinkCopy").onclick=()=>{ const v=$("tourLink"); v.select(); navigator.clipboard.writeText(v.value).then(()=>msg("Link copiado.",true)).catch(()=>{}); };
 renderTourRooms();
 
+/* ================= Mi marca: estilo propio, datos y pilares · Contenido del día ================= */
+const FONT_OPTS={"sans-moderna":{label:"Moderna (Montserrat)",t:F.mont(800),b:F.mont(500)},"sans-fina":{label:"Fina (Jost)",t:F.jost(300),b:F.jost(400)},
+  "serif-elegante":{label:"Elegante (Cormorant)",t:F.corm(500),b:F.jost(400)},"serif-clasica":{label:"Clásica (Bodoni)",t:F.bod(400),b:F.jost(400)}};
+const LAYOUT_OPTS={"foto-completa":"Foto completa con texto encima","banda-abajo":"Foto arriba y franja de color","marco":"Foto con marco de color","tarjeta":"Foto con tarjeta de texto","arco":"Foto en arco sobre fondo liso"};
+const OVERLAY_OPTS={"degradado-oscuro":"Oscurecida abajo","sin-overlay":"Sin oscurecer","claro":"Aclarada"};
+// Fichas de los estilos que ya vienen en la app, para armar placas de texto (contenido del día).
+const BUILTIN_TK={
+  oscuro:{bg:"#2B1E17",surface:"#2B1E17",ink:"#F2EADF",muted:"#BFAF9F",accent:"#5A0F14",titleFont:"sans-moderna",titleCase:"normal",layout:"banda-abajo",overlay:"degradado-oscuro"},
+  cielo:{bg:"#142C6E",surface:"#142C6E",ink:"#FFFFFF",muted:"#E8C47A",accent:"#E8C47A",titleFont:"serif-elegante",titleCase:"mayusculas",layout:"foto-completa",overlay:"degradado-oscuro"},
+  sold:{bg:"#F5F1EA",surface:"#F5F1EA",ink:"#1A1A1A",muted:"#555555",accent:"#1A1A1A",titleFont:"serif-clasica",titleCase:"normal",layout:"marco",overlay:"sin-overlay"},
+  vidrio:{bg:"#1C3A44",surface:"#1C3A44",ink:"#FFFFFF",muted:"#BDE6F0",accent:"#BDE6F0",titleFont:"sans-fina",titleCase:"normal",layout:"tarjeta",overlay:"degradado-oscuro"},
+  ventana:{bg:"#EFE9E1",surface:"#FFFFFF",ink:"#2A2522",muted:"#6B625B",accent:"#8A6B4F",titleFont:"serif-elegante",titleCase:"normal",layout:"marco",overlay:"sin-overlay"},
+  arco:{bg:"#F7F3EC",surface:"#F7F3EC",ink:"#1F2A44",muted:"#56607A",accent:"#1F2A44",titleFont:"serif-clasica",titleCase:"mayusculas",layout:"arco",overlay:"sin-overlay"}
+};
+let MI_TK=null;
+function tkOf(style){ if(style==="mi"&&MI_TK) return MI_TK; const t={...(BUILTIN_TK[style]||BUILTIN_TK.oscuro)}; if(style==="oscuro") t.accent=$("f_accent").value||t.accent; return t; }
+function lum(h){ const n=parseInt(String(h).replace("#","").slice(0,6),16)||0, f=v=>(v/=255)<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4); return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255); }
+function contrast(a,b){ const x=lum(a), y=lum(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); }
+function inkOn(bg,tk){ for(const c of [tk.ink,tk.bg,tk.surface,tk.muted]) if(c&&contrast(c,bg)>=3.2) return c; return lum(bg)>.4?"#111111":"#FFFFFF"; }
+function accOn(bg,tk,fb){ return contrast(tk.accent,bg)>=2.2?tk.accent:fb; }
+const upc=(tk,s)=>tk.titleCase==="mayusculas"?String(s||"").toUpperCase():String(s||"");
+
+// Bloque de texto centrado (antetítulo, título, bajada) dentro de una caja; mide primero y después dibuja.
+function textBox(x,W,tk,top,boxH,maxW,p,col,acc,big,bs=0.03){
+  const T=FONT_OPTS[tk.titleFont]||FONT_OPTS["sans-moderna"], cx=W/2, lh=bs*1.42;
+  const f=p.title?fit(x,upc(tk,p.title),maxW,3,W*(big?0.085:0.068),W*0.045,T.t):null;
+  x.font=T.b(W*bs); const bl=p.sub?wrap(x,p.sub,maxW).slice(0,5):[];
+  const eyH=p.eyebrow?W*0.055:0, ruleH=p.rule?W*0.04:0, tH=f?f.size*(0.85+(f.lines.length-1)*1.08):0, bH=bl.length?W*0.035+bl.length*W*lh:0;
+  let y=top+Math.max(0,(boxH-(ruleH+eyH+tH+bH))/2);
+  if(p.rule){ x.fillStyle=acc; x.fillRect(cx-W*0.03,y,W*0.06,Math.max(3,W*0.005)); y+=ruleH; }
+  if(p.eyebrow){ x.fillStyle=acc; sfit(x,p.eyebrow.toUpperCase(),cx,y+W*0.03,4,maxW,F.jost(600),W*0.024); y+=eyH; }
+  if(f){ x.font=T.t(f.size); x.fillStyle=col; y=lines(x,f,cx,y+f.size*0.85,1.08,"center"); }
+  if(bl.length){ x.font=T.b(W*bs); x.fillStyle=col; x.globalAlpha=.9; x.textAlign="center"; bl.forEach((l,i)=>x.fillText(l,cx,y+W*(0.035+bs*1.1)+i*W*lh)); x.textAlign="left"; x.globalAlpha=1; }
+}
+function shadowed(x,on,W){ if(on){ x.shadowColor="rgba(0,0,0,0.55)"; x.shadowBlur=W*0.015; } else x.shadowBlur=0; }
+// Dibuja una placa con la ficha de estilo. kind: cover | photo | text | facts | cta
+function paint(x,W,H,tk,o){
+  const M=W*0.07, cx=W/2, lay=tk.layout, T=FONT_OPTS[tk.titleFont]||FONT_OPTS["sans-moderna"];
+  if(o.kind==="cover"||o.kind==="photo"){
+    const p={eyebrow:o.eyebrow,title:o.title,sub:o.sub,rule:true}, big=o.kind==="cover";
+    if(lay==="banda-abajo"){ const band=H*(o.sub?0.34:0.3); x.fillStyle=tk.surface; x.fillRect(0,0,W,H); coverFit(x,o.img,0,0,W,H-band);
+      textBox(x,W,tk,H-band,band,W-2*M,p,inkOn(tk.surface,tk),accOn(tk.surface,tk,tk.muted),big); }
+    else if(lay==="marco"){ const m=W*0.055, ph=H*0.62; x.fillStyle=tk.bg; x.fillRect(0,0,W,H); coverFit(x,o.img,m,m,W-2*m,ph);
+      textBox(x,W,tk,m+ph,H-ph-2*m,W-2*M,p,inkOn(tk.bg,tk),accOn(tk.bg,tk,tk.muted),big); }
+    else if(lay==="tarjeta"){ coverFit(x,o.img,0,0,W,H); vgrad(x,H*0.4,H,"rgba(0,0,0,0)","rgba(0,0,0,0.35)",W);
+      const ch=H*(o.sub?0.36:0.3), cy=H-ch-M*0.8; x.globalAlpha=.95; x.fillStyle=tk.surface; x.fillRect(M,cy,W-2*M,ch); x.globalAlpha=1;
+      textBox(x,W,tk,cy,ch,W-3.2*M,p,inkOn(tk.surface,tk),accOn(tk.surface,tk,tk.muted),big); }
+    else if(lay==="arco"){ x.fillStyle=tk.bg; x.fillRect(0,0,W,H); const th=H*0.32;
+      textBox(x,W,tk,H*0.03,th,W-2*M,p,inkOn(tk.bg,tk),accOn(tk.bg,tk,tk.muted),big);
+      const aw=W*0.72, ah=H-th-H*0.07; x.save(); arch(x,(W-aw)/2,th+H*0.02,aw,ah); x.clip(); coverFit(x,o.img,(W-aw)/2,th+H*0.02,aw,ah); x.restore(); }
+    else { coverFit(x,o.img,0,0,W,H); const light=tk.overlay==="claro";
+      if(tk.overlay!=="sin-overlay") vgrad(x,H*0.38,H,light?"rgba(255,255,255,0)":"rgba(0,0,0,0)",light?"rgba(255,255,255,0.85)":"rgba(0,0,0,0.78)",W);
+      const col=light?inkOn("#FFFFFF",tk):"#FFFFFF"; shadowed(x,tk.overlay==="sin-overlay",W);
+      textBox(x,W,tk,H*0.56,H*0.38,W-2*M,p,col,light?accOn("#FFFFFF",tk,col):(lum(tk.accent)>.25?tk.accent:"#FFFFFF"),big); shadowed(x,false,W); }
+    if(o.kind==="cover"&&lay!=="arco") drawLogo(x,cx,W*0.045,W*0.3,W*0.075,"center");
+  } else if(o.kind==="text"){
+    let bg=tk.bg, col;
+    if(o.img){ coverFit(x,o.img,0,0,W,H); x.fillStyle="rgba(0,0,0,0.58)"; x.fillRect(0,0,W,H); bg="#222222"; col="#FFFFFF"; }
+    else { x.fillStyle=bg; x.fillRect(0,0,W,H); col=inkOn(bg,tk); }
+    const acc=o.img?(lum(tk.accent)>.25?tk.accent:"#FFFFFF"):accOn(bg,tk,col);
+    if(o.num){ x.font=T.t(W*0.16); x.fillStyle=acc; x.textAlign="center"; x.fillText(o.num,cx,H*0.3); x.textAlign="left"; }
+    textBox(x,W,tk,H*0.33,H*0.52,W-2.4*M,{title:o.title,sub:o.sub},col,acc,false,0.042);
+    if(o.swipe){ x.font=F.jost(500)(W*0.024); x.fillStyle=col; x.globalAlpha=.7; x.textAlign="center"; x.fillText(o.swipe,cx,H-M*0.9); x.textAlign="left"; x.globalAlpha=1; }
+  } else if(o.kind==="facts"){
+    x.fillStyle=tk.bg; x.fillRect(0,0,W,H); const col=inkOn(tk.bg,tk), acc=accOn(tk.bg,tk,col);
+    x.fillStyle=acc; sfit(x,(o.factsLabel||"").toUpperCase(),cx,M+W*0.06,6,W-2*M,F.jost(600),W*0.03);
+    const n=Math.min((o.facts||[]).length,6), rows=Math.ceil(n/2), top=M+W*0.12, avail=H-M-W*0.2-top, rowH=Math.min(W*0.2,avail/Math.max(rows,1));
+    if(n) factGrid(x,{facts:o.facts},M,top+(avail-rows*rowH)/2,W-2*M,2,rowH,T.t(W*0.085),T.b(W*0.026),col);
+    x.fillStyle=col; const fp=fit(x,o.price||"",W-2*M,1,W*0.055,W*0.035,T.t); lines(x,fp,cx,H-M,1,"center");
+  } else { // cta
+    x.fillStyle=tk.bg; x.fillRect(0,0,W,H); const col=inkOn(tk.bg,tk), acc=accOn(tk.bg,tk,col);
+    const ph=H*0.4;
+    if(o.img){ if(lay==="arco"){ const aw=W*0.5; x.save(); arch(x,(W-aw)/2,M,aw,ph); x.clip(); coverFit(x,o.img,(W-aw)/2,M,aw,ph); x.restore(); } else coverFit(x,o.img,M,M,W-2*M,ph); }
+    const top=o.img?M+ph:0, area=H-top-M-W*0.16;
+    textBox(x,W,tk,top,area,W-2*M,{title:o.visit,sub:o.cta,rule:true},col,acc,true);
+    brandMark(x,{brand:o.brand},cx,H-M-W*0.15,"center",col,F.jost(600)(W*0.026),3,W*0.055);
+    if(o.handle){ x.fillStyle=acc; const fh=fit(x,o.handle,W-2*M,1,W*0.04,W*0.026,F.jost(600)); lines(x,fh,cx,H-M,1,"center"); }
+  }
+}
+function setMine(tk){
+  MI_TK=tk?{...tk}:null;
+  if(MI_TK){
+    STYLES.mi={name:MI_TK.name||"Mi estilo", draw(x,W,H,k,c){
+      if(k==="cover") paint(x,W,H,MI_TK,{kind:"cover",img:c.img,eyebrow:c.eyebrow,title:c.title});
+      else if(k==="photo") paint(x,W,H,MI_TK,{kind:"photo",img:c.img,title:c.cap,sub:c.sub});
+      else if(k==="facts") paint(x,W,H,MI_TK,{kind:"facts",facts:c.facts,factsLabel:c.factsLabel,price:c.price});
+      else paint(x,W,H,MI_TK,{kind:"cta",img:c.img,visit:c.visit,cta:c.cta,handle:c.handle,brand:c.brand}); }};
+    REEL_THEME.mi={title:(FONT_OPTS[MI_TK.titleFont]||FONT_OPTS["sans-moderna"]).t, small:F.jost(500), ink:"#FFFFFF", accent:lum(MI_TK.accent)>.25?MI_TK.accent:"#FFFFFF", upper:MI_TK.titleCase==="mayusculas"};
+  } else { delete STYLES.mi; delete REEL_THEME.mi; if(S.style==="mi") S.style="oscuro"; }
+  buildPickers();
+}
+
+/* ---------- selectores de estilo (paso 4 y Mi marca) ---------- */
+const brandStylesEl=$("brandStyles");
+function buildPickers(){
+  [stylesEl,brandStylesEl].forEach(el=>{ el.innerHTML="";
+    const keys=Object.keys(STYLES); if(keys.includes("mi")){ keys.splice(keys.indexOf("mi"),1); keys.unshift("mi"); }
+    keys.forEach(k=>{ const v=STYLES[k], b=document.createElement("button"); b.type="button"; b.className="style-opt"; b.dataset.k=k;
+      b.innerHTML=`<img alt="Vista previa del estilo ${esc(v.name)}"><b>${esc(v.name)}${k==="mi"?" ★":""}</b>`;
+      b.onclick=()=>{ S.style=k; markStyle(); schedule(); brandPreview(); if(DL.post) dailyRender(); }; el.appendChild(b); }); });
+  markStyle(); schedule();
+}
+let DEMO=null;
+function demoImg(){ if(DEMO) return DEMO; const c=canvas(1200,900), x=c.getContext("2d");
+  vgrad(x,0,560,"#BFD7EA","#EAF2F7",1200); x.fillStyle="#9DB58A"; x.fillRect(0,560,1200,340);
+  x.fillStyle="#F3EFE8"; x.fillRect(300,300,600,300); x.fillStyle="#E4DED4"; x.fillRect(470,170,430,140);
+  x.fillStyle="#3B4650"; x.fillRect(360,380,200,150); x.fillRect(620,380,120,220); x.fillRect(800,380,60,150); x.fillRect(520,210,320,70);
+  x.fillStyle="#6E8E5C"; for(let i=0;i<9;i++){ x.beginPath(); x.arc(110+i*120,600,48,0,7); x.fill(); }
+  DEMO=c; return c; }
+
+/* ---------- perfil (se guarda en tu cuenta; si no hay conexión, en este navegador) ---------- */
+const PILLARS=["Consejos para compradores","Consejos para vendedores","Mercado y precios","Créditos y financiación","Inversión","Alquileres","Barrios y zonas","Decoración y home staging","Detrás de escena","Preguntas frecuentes"];
+let PROFILE=null, obImgs=[];
+async function loadProfile(){
+  try{ const r=await fetch("/api/profile",{cache:"no-store"}); if(r.status===401){ location.href="/"; return; } if(r.ok) PROFILE=(await r.json()).profile; }catch(e){}
+  if(!PROFILE){ try{ PROFILE=JSON.parse(localStorage.getItem("lts_profile")||"null"); }catch(e){} }
+  applyProfile();
+}
+function applyProfile(){
+  const p=PROFILE||{};
+  setMine(p.mi||null);
+  if(p.style&&STYLES[p.style]) S.style=p.style;
+  if(p.brand) $("f_brand").value=p.brand; if(p.handle) $("f_handle").value=p.handle; if(p.cta) $("f_cta").value=p.cta;
+  $("b_brand").value=p.brand||""; $("b_handle").value=p.handle||""; $("b_city").value=p.city||""; $("b_cta").value=p.cta||"";
+  if(p.logo){ const im=new Image(); im.onload=()=>{ S.logo=im; $("logoClear").hidden=false; $("b_logoClear").hidden=false; schedule(); brandPreview(); if(DL.post) dailyRender(); }; im.src=p.logo; }
+  renderPillarChips(); fillMiForm(); markStyle(); schedule(); renderDailyPillars();
+  if(!p.done){ go("brand"); $("obAsk").hidden=false; $("brandBody").hidden=true; } else { $("obAsk").hidden=true; $("brandBody").hidden=false; go("link"); }
+}
+function renderPillarChips(){
+  const box=$("pillarChips"); box.innerHTML=""; const sel=new Set((PROFILE&&PROFILE.pillars)||[]);
+  const all=[...new Set([...PILLARS,...sel])];
+  all.forEach(t=>{ const b=document.createElement("button"); b.type="button"; b.textContent=t; b.setAttribute("aria-pressed",sel.has(t));
+    b.onclick=()=>{ b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")!=="true"); }; box.appendChild(b); });
+}
+$("pillarAdd").onclick=()=>{ const v=$("pillarNew").value.trim(); if(!v) return; PROFILE=PROFILE||{}; PROFILE.pillars=[...new Set([...selPillars(),v])]; $("pillarNew").value=""; renderPillarChips(); };
+$("pillarNew").onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); $("pillarAdd").click(); } };
+function selPillars(){ return [...$("pillarChips").querySelectorAll("button[aria-pressed=true]")].map(b=>b.textContent); }
+async function logoData(img){ const s=Math.min(1,500/Math.max(img.naturalWidth,img.naturalHeight)), c=canvas(Math.round(img.naturalWidth*s),Math.round(img.naturalHeight*s)); c.getContext("2d").drawImage(img,0,0,c.width,c.height); return c.toDataURL("image/png"); }
+$("b_logo").onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ S.logo=(await loadImg(f)).img; $("b_logoClear").hidden=false; $("logoClear").hidden=false; schedule(); brandPreview(); }catch(err){} };
+$("b_logoClear").onclick=()=>{ S.logo=null; $("b_logo").value=""; $("b_logoClear").hidden=true; $("logoClear").hidden=true; schedule(); brandPreview(); };
+$("brandSave").onclick=async()=>{
+  const st=$("brandStatus"), pills=selPillars();
+  if(!pills.length){ st.className="status"; st.textContent="Elegí al menos un pilar de contenido."; return; }
+  PROFILE={...(PROFILE||{}), done:true, style:S.style, mi:MI_TK, brand:$("b_brand").value.trim(), handle:$("b_handle").value.trim(), city:$("b_city").value.trim(), cta:$("b_cta").value.trim(), pillars:pills,
+    logo:S.logo?await logoData(S.logo):""};
+  $("f_brand").value=PROFILE.brand; $("f_handle").value=PROFILE.handle; $("f_cta").value=PROFILE.cta; schedule();
+  try{ localStorage.setItem("lts_profile",JSON.stringify(PROFILE)); }catch(e){}
+  st.className="status"; st.textContent="Guardando…"; $("brandSave").disabled=true;
+  try{ const r=await fetch("/api/profile",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({profile:PROFILE})});
+    if(r.status===401){ location.href="/"; return; } const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error||"save");
+    st.className="status ok"; st.textContent="Listo, tu marca quedó guardada en tu cuenta."; }
+  catch(e){ st.className="status ok"; st.textContent="Quedó guardada en este navegador. "+(e.message&&e.message!=="save"&&e.message!=="Failed to fetch"?e.message:"No pude guardarla en tu cuenta: probá de nuevo con conexión."); }
+  finally{ $("brandSave").disabled=false; }
+  renderDailyPillars(); $("obAsk").hidden=true;
+};
+
+/* ---------- copiar el estilo desde ejemplos ---------- */
+$("obYes").onclick=()=>{ $("obAsk").hidden=true; $("brandBody").hidden=false; $("obCopy").hidden=false; $("obDrop").focus(); $("obCopy").scrollIntoView({behavior:"smooth",block:"start"}); };
+$("obNo").onclick=()=>{ $("obAsk").hidden=true; $("brandBody").hidden=false; $("obCopy").hidden=false; $("brandStyles").scrollIntoView({behavior:"smooth",block:"start"}); };
+const obDrop=$("obDrop");
+obDrop.onclick=()=>$("obInput").click();
+obDrop.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); $("obInput").click(); } };
+obDrop.ondragover=e=>{ e.preventDefault(); obDrop.classList.add("over"); }; obDrop.ondragleave=()=>obDrop.classList.remove("over");
+obDrop.ondrop=e=>{ e.preventDefault(); obDrop.classList.remove("over"); addExamples(e.dataTransfer.files); };
+$("obInput").onchange=e=>{ addExamples(e.target.files); e.target.value=""; };
+async function addExamples(files){
+  for(const f of [...files]){ if(!f.type.startsWith("image/")||obImgs.length>=6) continue; try{ obImgs.push(await loadImg(f)); }catch(e){} }
+  const box=$("obThumbs"); box.innerHTML="";
+  obImgs.forEach((p,i)=>{ const d=document.createElement("div"); d.className="thumb"; d.innerHTML=`<img src="${p.url}" alt="Ejemplo ${i+1}"><button class="x" aria-label="Quitar ejemplo ${i+1}">×</button>`;
+    d.querySelector(".x").onclick=()=>{ obImgs.splice(i,1); addExamples([]); }; box.appendChild(d); });
+  $("obAnalyze").disabled=!obImgs.length;
+  $("obStatus").textContent=obImgs.length?`${obImgs.length} ejemplo(s). Tocá “Copiar mi estilo”.`:"";
+}
+const hex=c=>"#"+c.map(v=>Math.round(v).toString(16).padStart(2,"0")).join("");
+function satOf(c){ const mx=Math.max(...c)/255, mn=Math.min(...c)/255; return mx?(mx-mn)/mx:0; }
+// Sin IA: saca la paleta de los ejemplos (colores que más se repiten, fondo según los bordes).
+function guessStyle(imgs){
+  const px=[], edge=[];
+  imgs.forEach(im=>{ const n=48, c=canvas(n,n), x=c.getContext("2d"); x.drawImage(im,0,0,n,n); const d=x.getImageData(0,0,n,n).data;
+    for(let i=0;i<n*n;i++){ const p=[d[i*4],d[i*4+1],d[i*4+2]], X=i%n, Y=i/n|0; px.push(p); if(X<4||Y<4||X>n-5||Y>n-5) edge.push(p); } });
+  let C=Array.from({length:7},(_,i)=>px[Math.floor((i+0.5)*px.length/7)].slice());
+  const near=p=>{ let b=0,bd=1e9; C.forEach((c,i)=>{ const dd=(p[0]-c[0])**2+(p[1]-c[1])**2+(p[2]-c[2])**2; if(dd<bd){bd=dd;b=i;} }); return b; };
+  for(let it=0;it<10;it++){ const s=C.map(()=>[0,0,0,0]); px.forEach(p=>{ const k=near(p); s[k][0]+=p[0]; s[k][1]+=p[1]; s[k][2]+=p[2]; s[k][3]++; }); C=C.map((c,i)=>s[i][3]?[s[i][0]/s[i][3],s[i][1]/s[i][3],s[i][2]/s[i][3]]:c); }
+  const cnt=C.map(()=>0), ec=C.map(()=>0); px.forEach(p=>cnt[near(p)]++); edge.forEach(p=>ec[near(p)]++);
+  const share=cnt.map(v=>v/px.length), bgI=ec.indexOf(Math.max(...ec)), bg=hex(C[bgI]);
+  const cand=C.map((c,i)=>({c:hex(c),i,sh:share[i],sat:satOf(c)})).filter(o=>o.i!==bgI&&o.sh>0.015);
+  const ink=(cand.slice().sort((a,b)=>contrast(b.c,bg)-contrast(a.c,bg))[0]||{c:lum(bg)>.4?"#111111":"#FFFFFF"}).c;
+  const acc=cand.filter(o=>o.c!==ink).sort((a,b)=>b.sat*Math.sqrt(b.sh)-a.sat*Math.sqrt(a.sh))[0];
+  const edgeShare=Math.max(...ec)/edge.length;
+  return {name:"Mi estilo", summary:"", bg, surface:bg, ink:contrast(ink,bg)>=3?ink:(lum(bg)>.4?"#111111":"#FFFFFF"), muted:ink, accent:acc&&acc.sat>0.2?acc.c:ink,
+    titleFont:"sans-moderna", titleCase:"normal", layout:edgeShare>0.55?"marco":"foto-completa", overlay:"degradado-oscuro"};
+}
+function smallJpeg(img,max){ const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)), c=canvas(Math.round(img.naturalWidth*s),Math.round(img.naturalHeight*s)); c.getContext("2d").drawImage(img,0,0,c.width,c.height); return c.toDataURL("image/jpeg",0.82); }
+$("obAnalyze").onclick=async()=>{
+  const st=$("obStatus"), imgs=obImgs.map(p=>p.img); if(!imgs.length) return;
+  $("obAnalyze").disabled=true; st.className="status"; st.textContent="Mirando tus ejemplos…";
+  let tk=null, ai=false;
+  try{ const r=await fetch("/api/ai",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"style",images:imgs.slice(0,4).map(im=>smallJpeg(im,1024))})});
+    if(r.status===401){ location.href="/"; return; } if(r.ok){ tk=(await r.json()).style; ai=true; } }catch(e){}
+  if(!tk) tk=guessStyle(imgs);
+  tk.name=tk.name||"Mi estilo"; setMine(tk); S.style="mi"; markStyle(); fillMiForm(); brandPreview(); schedule(); if(DL.post) dailyRender();
+  st.className="status ok"; st.textContent=ai?`Listo: copié tu estilo. ${tk.summary||""} Ajustá abajo lo que haga falta y guardá tu marca.`
+    :"Listo: copié tus colores. Elegí abajo la tipografía y el diseño que más se parezcan, y guardá tu marca.";
+  $("obAnalyze").disabled=false; $("miEdit").hidden=false;
+};
+function fillMiForm(){
+  $("miEdit").hidden=!MI_TK; if(!MI_TK) return;
+  $("mi_name").value=MI_TK.name||"Mi estilo"; ["bg","surface","ink","accent"].forEach(k=>$("mi_"+k).value=MI_TK[k]);
+  $("mi_font").value=MI_TK.titleFont; $("mi_layout").value=MI_TK.layout; $("mi_case").value=MI_TK.titleCase; $("mi_overlay").value=MI_TK.overlay;
+}
+const fillSel=(id,o)=>{ $(id).innerHTML=Object.entries(o).map(([k,v])=>`<option value="${k}">${typeof v==="string"?v:v.label}</option>`).join(""); };
+fillSel("mi_font",FONT_OPTS); fillSel("mi_layout",LAYOUT_OPTS); fillSel("mi_overlay",OVERLAY_OPTS);
+["mi_name","mi_bg","mi_surface","mi_ink","mi_accent","mi_font","mi_layout","mi_case","mi_overlay"].forEach(id=>$(id).addEventListener("input",()=>{
+  if(!MI_TK) return; const t={...MI_TK, name:$("mi_name").value.trim()||"Mi estilo", bg:$("mi_bg").value, surface:$("mi_surface").value, ink:$("mi_ink").value, accent:$("mi_accent").value,
+    muted:$("mi_ink").value, titleFont:$("mi_font").value, layout:$("mi_layout").value, titleCase:$("mi_case").value, overlay:$("mi_overlay").value};
+  setMine(t); S.style="mi"; markStyle(); brandPreview(); if(DL.post) dailyRender(); }));
+let bpT=null;
+function brandPreview(){ clearTimeout(bpT); bpT=setTimeout(()=>{
+  if($("sec-brand").hidden) return;
+  const d=data(), t=T[d.lang], base=content(d,t), img=photo(0)||demoImg(), tk=tkOf(S.style), W=1080, H=1350;
+  const a=piece(S.style,W,H,"cover",base,{img,img2:photo(1)||img});
+  const b=canvas(W,H); paint(b.getContext("2d"),W,H,tk,{kind:"text",num:"01",title:"Así se ve una placa de consejos",sub:"Con tus colores y tu tipografía, para el contenido del día."});
+  const c=piece(S.style,W,H,"cta",base,{img,img2:img});
+  const box=$("miPrevBox"); box.innerHTML="";
+  [a,b,c].forEach((cv,i)=>{ const im=new Image(); im.src=cv.toDataURL("image/jpeg",0.85); im.alt=["Portada","Placa de texto","Cierre"][i]; const f=document.createElement("figure"); f.appendChild(im); box.appendChild(f); });
+},120); }
+
+/* ---------- navegación entre secciones ---------- */
+function go(sec){
+  ["link","daily","brand"].forEach(k=>{ $("sec-"+k).hidden=k!==sec; const b=document.querySelector(`[data-sec="${k}"]`); if(b) b.setAttribute("aria-current",k===sec?"page":"false"); });
+  if(sec==="brand"){ brandPreview(); }
+  if(sec==="daily"){ renderDailyPillars(); if(!DL.post) dailyGenerate(false); }
+  window.scrollTo({top:0});
+}
+document.querySelectorAll("[data-sec]").forEach(b=>b.onclick=()=>go(b.dataset.sec));
+$("logout2").onclick=()=>$("logout").click();
+
+/* ---------- contenido del día ---------- */
+// Banco de ideas por pilar (se usa sin IA). Cada idea: título, placas [título, texto], cierre, búsqueda de foto.
+const BANK={
+"Consejos para compradores":[
+ {t:"5 cosas que mirar antes de comprar",s:[["Orientación y luz","Visitá la propiedad a distintas horas para ver cuánta luz entra de verdad."],["Humedad","Mirá techos, rincones y placares: las manchas y el olor a encierro cuentan mucho."],["Expensas","Pedí las últimas liquidaciones y preguntá si hay obras o gastos extraordinarios en camino."],["Papeles","Revisá con tu escribano el título, las deudas y que la propiedad esté en regla."],["El barrio","Recorré la zona de noche y de día: transporte, ruido, comercios y seguridad."]],c:"¿Querés que te acompañemos a ver propiedades?",q:"pareja visitando casa"},
+ {t:"Primera vivienda: por dónde empezar",s:[["Definí tu presupuesto","Sumá ahorros, crédito posible y gastos de escritura antes de salir a buscar."],["Prioridades","Hacé una lista de lo imprescindible y de lo que podés resignar."],["Zona","Pensá en tus traslados diarios: el barrio pesa tanto como la casa."],["Asesoramiento","Un asesor te ahorra visitas, tiempo y errores en la negociación."]],c:"Contanos qué buscás y armamos tu búsqueda",q:"llaves casa nueva"},
+ {t:"Gastos de comprar que nadie te cuenta",s:[["Escritura","Los honorarios del escribano y los impuestos de escritura se suman al precio."],["Comisión","Consultá el porcentaje de la inmobiliaria antes de hacer una oferta."],["Mudanza y arreglos","Reservá una parte para pintura, ajustes y la mudanza."],["Gastos fijos","Calculá expensas, impuestos y servicios del primer año."]],c:"Te pasamos un cálculo a medida",q:"calculadora documentos casa"}],
+"Consejos para vendedores":[
+ {t:"Cómo preparar tu casa para vender",s:[["Orden y espacio","Menos objetos a la vista hacen que los ambientes se vean más grandes."],["Luz","Abrí cortinas y prendé todas las luces en las visitas y en las fotos."],["Arreglos chicos","Una canilla que gotea o una puerta que no cierra restan más de lo que parece."],["Buenas fotos","Las fotos profesionales son la primera visita de tu comprador."]],c:"Tasamos tu propiedad sin cargo",q:"living ordenado luminoso"},
+ {t:"El precio justo vende más rápido",s:[["Tasación real","Comparar con propiedades vendidas, no solo publicadas, da un precio realista."],["Primeras semanas","Es cuando tu aviso tiene más visitas: un buen precio las aprovecha."],["Negociación","Dejá un margen razonable, pero no infles el precio de salida."],["Seguimiento","Medir consultas y visitas te dice si hay que ajustar."]],c:"Pedí tu tasación hoy",q:"casa en venta cartel"},
+ {t:"Papeles que vas a necesitar para vender",s:[["Escritura","Tené a mano el título de propiedad original."],["Impuestos al día","Boletas de ABL, rentas y servicios sin deuda."],["Expensas","Si es un depto, el libre deuda de expensas del administrador."],["Planos","Los planos aprobados ayudan y dan confianza al comprador."]],c:"Te ayudamos con todo el proceso",q:"firma documentos escritorio"}],
+"Mercado y precios":[
+ {t:"¿Es buen momento para comprar?",s:[["Mirá tu caso","Más que el mercado, importa tu necesidad, tu ahorro y tu plan."],["Compará","Mirá cómo se movieron los precios en tu zona en el último año."],["Oportunidades","Las propiedades bien tasadas se venden rápido: estar preparado suma."],["Asesorate","Un análisis de la zona te da una referencia real antes de ofertar."]],c:"Pedinos un análisis de tu zona",q:"ciudad edificios atardecer"},
+ {t:"Qué hace subir el valor de una propiedad",s:[["Ubicación","Transporte, comercios y servicios cerca pesan en el precio."],["Luz y vistas","Un piso alto o un frente luminoso valen más."],["Estado","Instalaciones nuevas y buen mantenimiento suman."],["Amenities","Cochera, balcón o espacio verde marcan la diferencia."]],c:"¿Querés saber cuánto vale la tuya?",q:"departamento moderno balcón"},
+ {t:"Precio publicado vs. precio de cierre",s:[["No es lo mismo","El precio del aviso es el punto de partida de la negociación."],["Dato clave","Para tasar se miran operaciones cerradas, no solo avisos."],["Tiempo en venta","Cuanto más tiempo publicada, más margen suele haber."],["Asesoramiento","Con datos reales ofertás con seguridad."]],c:"Te asesoramos en tu oferta",q:"negociación apretón de manos"}],
+"Créditos y financiación":[
+ {t:"Antes de pedir un crédito hipotecario",s:[["Ingresos","Los bancos miran que la cuota no supere una parte de tus ingresos."],["Ahorro previo","Vas a necesitar ahorro para la parte que no financia el banco y los gastos."],["Compará","Tasa, plazo y requisitos cambian mucho de un banco a otro."],["Propiedad apta","No todas las propiedades califican: consultá antes de reservar."]],c:"Te ayudamos a encontrar una propiedad apta crédito",q:"banco crédito familia"},
+ {t:"Apta crédito: qué significa",s:[["Papeles en regla","Escritura, planos y situación legal sin problemas."],["Tasación","El banco tasa la propiedad para definir cuánto presta."],["Estado","La propiedad tiene que estar en condiciones de habitarse."],["Tiempos","El trámite suma semanas: conviene planificarlo."]],c:"Buscamos propiedades apta crédito para vos",q:"casa familia jardín"}],
+"Inversión":[
+ {t:"Invertir en ladrillos: 4 claves",s:[["Objetivo","Definí si buscás renta mensual o que la propiedad se valorice."],["Ubicación","Cerca de universidades, oficinas o transporte se alquila más rápido."],["Tamaño","Monoambientes y 2 ambientes suelen tener más demanda de alquiler."],["Costos","Sumá expensas, impuestos y períodos sin inquilino a tu cálculo."]],c:"Te armamos opciones de inversión",q:"inversión monedas casa"},
+ {t:"De pozo o a estrenar",s:[["De pozo","Precio de entrada menor, pero esperás la obra y asumís sus tiempos."],["A estrenar","Lo ves terminado y podés alquilarlo enseguida."],["Desarrollador","Investigá obras anteriores y su cumplimiento."],["Contrato","Revisá cuotas, ajustes y fecha de entrega con un profesional."]],c:"Consultanos por los proyectos disponibles",q:"edificio en construcción"}],
+"Alquileres":[
+ {t:"Antes de firmar un alquiler",s:[["Leé el contrato","Duración, ajustes, depósito y quién paga cada gasto."],["Estado","Hacé un inventario con fotos el día que entrás."],["Garantía","Consultá qué garantías se aceptan antes de reservar."],["Servicios","Preguntá cuánto se paga de expensas y servicios."]],c:"Te ayudamos a encontrar tu próximo hogar",q:"mudanza cajas departamento"},
+ {t:"Dueños: cómo alquilar sin dolores de cabeza",s:[["Inquilino adecuado","Verificar ingresos y referencias evita problemas después."],["Contrato claro","Todo por escrito: ajustes, mantenimiento y entrega."],["Estado inicial","Un inventario con fotos protege a las dos partes."],["Administración","Delegar el cobro y los arreglos te ahorra tiempo."]],c:"Administramos tu alquiler",q:"llaves entrega departamento"}],
+"Barrios y zonas":[
+ {t:"Cómo elegir el barrio ideal",s:[["Rutina","Pensá en el trabajo, el colegio y tus traslados de todos los días."],["Servicios","Supermercados, salud y espacios verdes cerca."],["Ambiente","Más tranquilo o con más movimiento: depende de tu estilo de vida."],["Proyección","Las zonas con obras nuevas suelen valorizarse."]],c:"Te contamos todo de nuestra zona",q:"barrio calle arbolada"},
+ {t:"Lo que más nos preguntan de la zona",s:[["Transporte","Cómo te movés y cuánto tardás al centro."],["Colegios","Opciones cerca para toda la familia."],["Seguridad","Recorrer de día y de noche te da una idea real."],["Precios","Te mostramos valores reales de operaciones recientes."]],c:"Escribinos y te asesoramos",q:"plaza barrio familia"}],
+"Decoración y home staging":[
+ {t:"Home staging: vendé más rápido",s:[["Despersonalizá","Guardá fotos familiares: el comprador tiene que imaginarse ahí."],["Neutros","Paredes claras agrandan y dan luz."],["Detalles","Plantas, almohadones y toallas nuevas cambian la foto."],["Olor y orden","Ventilá y ordená antes de cada visita."]],c:"Te asesoramos para preparar tu propiedad",q:"living decorado plantas"},
+ {t:"4 trucos para agrandar un ambiente",s:[["Espejos","Duplican la luz y la sensación de espacio."],["Muebles livianos","Patas a la vista y menos volumen."],["Colores claros","Paredes y textiles en tonos suaves."],["Menos es más","Dejar paso libre hace que todo respire."]],c:"Seguinos para más ideas",q:"dormitorio luminoso minimalista"}],
+"Detrás de escena":[
+ {t:"Un día en la inmobiliaria",s:[["Temprano","Respondemos consultas y armamos las visitas del día."],["Visitas","Acompañamos a cada comprador y escuchamos lo que busca."],["Tasaciones","Visitamos propiedades para valuarlas con datos reales."],["Cierre","Seguimos cada operación hasta la entrega de llaves."]],c:"Conocé a nuestro equipo",q:"equipo trabajando oficina"},
+ {t:"Así preparamos cada publicación",s:[["Visita","Conocemos la propiedad y su historia."],["Fotos","Buscamos la mejor luz y los mejores ángulos."],["Precio","Analizamos el mercado para tasar bien."],["Difusión","Portales, redes y nuestra base de clientes."]],c:"¿Querés vender con nosotros?",q:"fotógrafo interior casa"}],
+"Preguntas frecuentes":[
+ {t:"Preguntas que nos hacen siempre",s:[["¿Cuánto tarda una venta?","Depende del precio y la zona: una buena tasación acorta los tiempos."],["¿Qué es la reserva?","Una seña para frenar la propiedad mientras se avanza con la operación."],["¿Quién paga la escritura?","En general el comprador; lo vemos en cada caso."],["¿Cobran por tasar?","Escribinos y te contamos cómo trabajamos."]],c:"¿Tenés otra pregunta? Escribinos",q:"preguntas casa signo"},
+ {t:"Reserva, boleto y escritura",s:[["Reserva","Frena la propiedad mientras se revisan los papeles."],["Boleto","El compromiso de compraventa con fecha y condiciones."],["Escritura","El acto final ante el escribano: pasás a ser dueño."],["Entrega","Se entregan las llaves y la propiedad libre."]],c:"Te acompañamos en cada paso",q:"firma contrato llaves"}]
+};
+const GENERIC=[
+ {t:"3 claves sobre {p}",s:[["Informate","Antes de decidir, buscá datos reales y asesoramiento."],["Planificá","Definí tiempos, presupuesto y prioridades."],["Consultá","Cada caso es distinto: te ayudamos con el tuyo."]],c:"Escribinos y lo vemos juntos",q:"casa moderna"},
+ {t:"Lo que tenés que saber de {p}",s:[["Primero","Entendé bien de qué se trata y qué opciones tenés."],["Errores comunes","Decidir apurado o sin comparar sale caro."],["Nuestro consejo","Apoyate en un profesional que conozca el mercado."]],c:"Consultanos sin compromiso",q:"interior casa luminosa"}
+];
+const DL={pillar:null, post:null, photos:[], shift:0};
+function renderDailyPillars(){
+  const box=$("dlPillars"); if(!box) return; box.innerHTML="";
+  const list=((PROFILE&&PROFILE.pillars)||[]).length?PROFILE.pillars:PILLARS.slice(0,4);
+  ["Sorprendeme",...list].forEach(t=>{ const b=document.createElement("button"); b.type="button"; b.textContent=t; b.setAttribute("aria-pressed",(DL.pillar||"Sorprendeme")===t);
+    b.onclick=()=>{ DL.pillar=t; box.querySelectorAll("button").forEach(o=>o.setAttribute("aria-pressed",o===b)); }; box.appendChild(b); });
+}
+function dayNum(){ const d=new Date(); return d.getFullYear()*400+d.getMonth()*32+d.getDate(); }
+function localPost(pillar){
+  const bank=BANK[pillar]||GENERIC, k=(dayNum()+DL.shift)%bank.length, i=bank[k];
+  const r=s=>s.replace("{p}",pillar.toLowerCase());
+  return {title:r(i.t), slides:i.s.map(([t,b])=>({t:r(t),b:r(b)})), cta:i.c, photoQuery:i.q, caption:""};
+}
+function pickPillar(){ const list=((PROFILE&&PROFILE.pillars)||[]).length?PROFILE.pillars:PILLARS;
+  if(DL.pillar&&DL.pillar!=="Sorprendeme") return DL.pillar; return list[(dayNum()+DL.shift)%list.length]; }
+async function dailyGenerate(another){
+  if(another) DL.shift++;
+  const st=$("dlStatus"), pillar=pickPillar(); st.className="status"; st.textContent="Armando la idea del día…"; $("dlGo").disabled=$("dlAgain").disabled=true;
+  let post=null, ai=false; const recent=(()=>{ try{ return JSON.parse(localStorage.getItem("lts_recent")||"[]"); }catch(e){ return []; } })();
+  try{ const r=await fetch("/api/ai",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"post",pillar,n:4,avoid:recent,profile:{brand:$("f_brand").value,city:(PROFILE&&PROFILE.city)||""}})});
+    if(r.status===401){ location.href="/"; return; } if(r.ok){ post=(await r.json()).post; ai=!!(post&&post.title); } }catch(e){}
+  if(!ai) post=localPost(pillar);
+  try{ localStorage.setItem("lts_recent",JSON.stringify([post.title,...recent].slice(0,15))); }catch(e){}
+  DL.post={...post, pillar}; DL.photos=[]; fillDailyForm(); dailyRender();
+  st.className="status ok"; st.textContent=`Idea del día sobre “${pillar}”. Editá los textos si querés y elegí una foto de portada.`;
+  $("dlGo").disabled=$("dlAgain").disabled=false;
+  $("pxQ").value=post.photoQuery||pillar; pxSearch(true,true);
+}
+$("dlGo").onclick=()=>dailyGenerate(false); $("dlAgain").onclick=()=>dailyGenerate(true);
+function fillDailyForm(){
+  const p=DL.post; $("dlTitle").value=p.title; $("dlCta").value=p.cta;
+  const box=$("dlSlides"); box.innerHTML="";
+  p.slides.forEach((s,i)=>{ const d=document.createElement("div"); d.className="slide-ed";
+    d.innerHTML=`<label>Placa ${i+2}</label><input type="text" value="${esc(s.t)}" aria-label="Título de la placa ${i+2}"><textarea rows="2" aria-label="Texto de la placa ${i+2}">${esc(s.b)}</textarea>`;
+    d.querySelector("input").oninput=e=>{ s.t=e.target.value; dailySoon(); }; d.querySelector("textarea").oninput=e=>{ s.b=e.target.value; dailySoon(); }; box.appendChild(d); });
+}
+$("dlTitle").oninput=e=>{ if(DL.post){ DL.post.title=e.target.value; dailySoon(); } };
+$("dlCta").oninput=e=>{ if(DL.post){ DL.post.cta=e.target.value; dailySoon(); } };
+let dlT=null; function dailySoon(){ clearTimeout(dlT); dlT=setTimeout(dailyRender,250); }
+const DOUT={feed:[],story:[]};
+function dailyRender(){
+  const p=DL.post; if(!p) return;
+  const tk=tkOf(S.style), W=1080, H=1350, brand=$("f_brand").value.trim(), handle=$("f_handle").value.trim(), ph=DL.photos;
+  const sig=(x,Wd,Hd,onPhoto,bg)=>{ const txt=[brand,handle].filter(Boolean).join("   ·   ").toUpperCase(); if(!txt) return; x.save();
+    x.fillStyle=onPhoto?"#FFFFFF":inkOn(bg,tk); if(onPhoto){ x.shadowColor="rgba(0,0,0,0.55)"; x.shadowBlur=Wd*0.012; } sfit(x,txt,Wd/2,Hd*0.035+Wd*0.012,3,Wd*0.86,F.jost(500),Wd*0.021); x.restore(); };
+  const make=(Wd,Hd,o,name,onPhoto)=>{ const c=canvas(Wd,Hd), x=c.getContext("2d"); paint(x,Wd,Hd,tk,o); if(o.kind!=="cta") sig(x,Wd,Hd,onPhoto,o.kind==="text"?tk.bg:tk.surface); return {c,name}; };
+  const coverOn=tk.layout==="foto-completa"||tk.layout==="tarjeta";
+  const feed=[make(W,H,{kind:"cover",img:ph[0]||demoImg(),eyebrow:p.pillar,title:p.title},"dia-01-portada",coverOn)];
+  p.slides.forEach((s,i)=>feed.push(make(W,H,{kind:"text",img:ph[i+1]||null,num:String(i+1).padStart(2,"0"),title:s.t,sub:s.b,swipe:i<p.slides.length-1?"Deslizá →":""},`dia-0${i+2}-placa`,!!ph[i+1])));
+  feed.push(make(W,H,{kind:"cta",img:ph[0]||null,visit:p.cta,cta:$("f_cta").value.trim()||"Escribinos por mensaje directo",handle,brand},`dia-0${p.slides.length+2}-cierre`,false));
+  const story=[make(1080,1920,{kind:"cover",img:ph[0]||demoImg(),eyebrow:p.pillar,title:p.title},"dia-historia",coverOn)];
+  DOUT.feed=feed; DOUT.story=story; show("dlOut",feed); show("dlStory",story);
+  const tags={"Consejos para compradores":"#ComprarCasa #PrimeraVivienda","Consejos para vendedores":"#VenderTuCasa #Tasacion","Mercado y precios":"#MercadoInmobiliario","Créditos y financiación":"#CreditoHipotecario","Inversión":"#InversionInmobiliaria","Alquileres":"#Alquiler","Barrios y zonas":"#Barrios","Decoración y home staging":"#HomeStaging #Deco","Detrás de escena":"#Equipo","Preguntas frecuentes":"#PreguntasFrecuentes"}[p.pillar]||"";
+  $("dlCap").textContent=p.caption&&p.caption.trim()?p.caption+(handle?`\n\n${handle}`:""):
+    `${p.title} 🏡\n\n${p.slides.map(s=>`• ${s.t}: ${s.b}`).join("\n")}\n\n${p.cta} 📩${handle?"\n"+handle:""}\n\n${tags} #Inmobiliaria #RealEstate #Propiedades${brand?" "+tag(brand):""}`;
+}
+$("dlSave").onclick=()=>saveFiles([...DOUT.feed,...DOUT.story]);
+
+/* ---------- fotos de stock (Pixabay) en Contenido del día ---------- */
+const PX_CHIPS=["casa moderna","living luminoso","cocina moderna","dormitorio","ciudad","llaves casa","familia mudanza","oficina","jardín","edificio"];
+let pxPage=1, pxLast="";
+PX_CHIPS.forEach(t=>{const b=document.createElement("button"); b.type="button"; b.textContent=t; b.onclick=()=>{$("pxQ").value=t; pxSearch(true);}; $("pxChips").appendChild(b);});
+function markPicked(){ $("pxGrid").querySelectorAll("button").forEach(b=>{ const i=DL.photos.findIndex(im=>im._px===b.dataset.id); b.classList.toggle("added",i>=0); b.dataset.n=i>=0?(i===0?"Portada":`Placa ${i+1}`):""; }); }
+async function pxSearch(fresh,auto){
+  const q=$("pxQ").value.trim(), st=$("pxStatus"); if(!q){ st.textContent="Escribí qué foto buscás."; return; }
+  if(fresh){ pxPage=1; $("pxGrid").innerHTML=""; } pxLast=q;
+  st.className="status"; st.textContent="Buscando…"; $("pxGo").disabled=true;
+  try{
+    const r=await fetch(`/api/pexels?q=${encodeURIComponent(q)}&page=${pxPage}`); if(r.status===401){ location.href="/"; return; }
+    const d=await r.json(); if(d.error){ st.textContent=d.error; return; }
+    if(d.source) $("pxCredit").innerHTML=`Fotos de <a href="https://${d.source.toLowerCase()}.com" target="_blank" rel="noopener">${d.source}</a>`;
+    if(!d.photos.length&&fresh){ st.textContent="No encontré fotos. Probá con otras palabras."; return; }
+    d.photos.forEach(ph=>{
+      const b=document.createElement("button"); b.type="button"; b.dataset.id=String(ph.id); b.title=`${ph.alt||"Foto"} · ${ph.by} (${d.source||"Stock"})`;
+      b.innerHTML=`<img src="${ph.thumb}" alt="${(ph.alt||"Foto de stock").replace(/"/g,"")}" loading="lazy">`;
+      b.onclick=async()=>{ const at=DL.photos.findIndex(im=>im._px===b.dataset.id);
+        if(at>=0){ DL.photos.splice(at,1); markPicked(); dailyRender(); return; }
+        st.textContent="Agregando foto…";
+        try{ const p=await loadRemote(ph.full); p.img._px=b.dataset.id; DL.photos.push(p.img); markPicked(); dailyRender();
+          st.className="status ok"; st.textContent=DL.photos.length===1?"Foto de portada lista. Tocá otras para ponerlas de fondo en las placas.":`Foto sumada a la placa ${DL.photos.length}. Tocala de nuevo para sacarla.`; }
+        catch(e){ st.textContent="No pude bajar esa foto. Probá con otra."; } };
+      $("pxGrid").appendChild(b);
+    });
+    $("pxMore").hidden=!d.more; st.className="status"; st.textContent="Tocá una foto para la portada; las que sigas tocando van de fondo en las placas.";
+    if(auto&&!DL.photos.length){ const first=$("pxGrid").querySelector("button"); if(first) first.click(); }
+  }catch(e){ st.textContent="No pude buscar fotos. Probá de nuevo."; }
+  finally{ $("pxGo").disabled=false; markPicked(); }
+}
+$("pxGo").onclick=()=>pxSearch(true);
+$("pxQ").onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); pxSearch(true); } };
+$("pxMore").onclick=()=>{ pxPage++; $("pxQ").value=pxLast; pxSearch(false); };
+
 /* ---------- pestañas y copiar ---------- */
 document.querySelectorAll("[role=tab]").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("[role=tab]").forEach(o=>o.setAttribute("aria-selected",o===b));
@@ -1365,7 +1826,8 @@ $("logout").onclick=async()=>{ try{ await fetch("/api/login",{method:"DELETE"});
 let timer=null;
 function schedule(){clearTimeout(timer);timer=setTimeout(render,250);}
 document.querySelectorAll("input[type=text],input[type=url],textarea,select,input[type=color]").forEach(el=>el.addEventListener("input",()=>{ if(el.id!=="raw"&&el.id!=="src") schedule(); }));
-Promise.all(['800 80px Montserrat','700 24px Montserrat','600 24px Montserrat','500 28px Montserrat','500 34px Manrope','500 40px "Cormorant Garamond"','italic 500 40px "Cormorant Garamond"','600 40px "Cormorant Garamond"','400 40px "Bodoni Moda"','500 40px "Bodoni Moda"','italic 400 40px "Bodoni Moda"','300 30px Jost','400 30px Jost','500 30px Jost','600 30px Jost','700 30px Jost'].map(f=>document.fonts.load(f))).catch(()=>{}).finally(render);
+Promise.all(['800 80px Montserrat','700 24px Montserrat','600 24px Montserrat','500 28px Montserrat','500 34px Manrope','500 40px "Cormorant Garamond"','italic 500 40px "Cormorant Garamond"','600 40px "Cormorant Garamond"','400 40px "Bodoni Moda"','500 40px "Bodoni Moda"','italic 400 40px "Bodoni Moda"','300 30px Jost','400 30px Jost','500 30px Jost','600 30px Jost','700 30px Jost'].map(f=>document.fonts.load(f))).catch(()=>{}).finally(()=>{ render(); brandPreview(); });
+buildPickers(); loadProfile();
 })();
 </script>
 

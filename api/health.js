@@ -9,6 +9,7 @@ module.exports = async (req, res) => {
     link_reader: has("JINA_API_KEY") ? "ok" : "missing (JINA_API_KEY)",
     portal_reader: has("SCRAPERAPI_KEY") ? "ok" : "missing (optional: SCRAPERAPI_KEY, for Argenprop)",
     stock_photos: has("PIXABAY_API_KEY") ? "ok (Pixabay)" : has("PEXELS_API_KEY") ? "ok (Pexels)" : "missing (optional: PIXABAY_API_KEY)",
+    ai: has("ANTHROPIC_API_KEY") ? "ok" : "missing (optional: ANTHROPIC_API_KEY, copies brand style + writes daily content)",
     SHOPIFY_WEBHOOK_SECRET: has("SHOPIFY_WEBHOOK_SECRET") ? "ok" : "missing (optional)"
   };
   try { await redis("PING"); out.database_connection = "ok"; } catch (err) { out.database_connection = "FAILED: " + String(err.message || err).slice(0, 80); }
