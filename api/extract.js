@@ -164,14 +164,14 @@ module.exports = async (req, res) => {
   const t0 = Date.now(), left = () => 9300 - (Date.now() - t0);
   let html = "", status = 0;
   try {
-    const r = await fetch(url, { headers: HEADERS, redirect: "follow", signal: AbortSignal.timeout(5000) });
+    const r = await fetch(url, { headers: HEADERS, redirect: "follow", signal: AbortSignal.timeout(4000) });
     status = r.status;
     if (r.ok) html = await r.text();
   } catch (e) {}
   // Algunos sitios rechazan los encabezados "de navegador" que no coinciden con el cliente real: reintento simple.
   if (!html || status === 403 || status === 401) {
     try {
-      const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "text/html", "Accept-Language": "es-AR,es;q=0.9" }, redirect: "follow", signal: AbortSignal.timeout(Math.min(4000, left() - 4000)) });
+      const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "text/html", "Accept-Language": "es-AR,es;q=0.9" }, redirect: "follow", signal: AbortSignal.timeout(Math.max(500, Math.min(2500, left() - 6000))) });
       if (r.ok) { html = await r.text(); status = r.status; } else if (!status) status = r.status;
     } catch (e) {}
   }
@@ -183,22 +183,23 @@ module.exports = async (req, res) => {
     if (/just a moment|attention required|access denied|pardon our interruption|un momento|verificaci[oó]n|are you a robot|security check/i.test(title)) return true;
     return h.length < 60000 && /cf-chl-|challenge-platform|px-captcha|captcha-delivery\.com|_Incapsula_Resource|geo\.captcha|awswaf|gokuProps|AwsWafIntegration|challenge\.js/i.test(h) && !/og:title|application\/ld\+json/i.test(h);
   };
-  // Si el sitio bloquea o arma la página con JavaScript, la pedimos a un lector que abre la página como un navegador.
+  // Si el sitio bloquea o arma la página con JavaScript: primero el servicio de scraping (si hay SCRAPERAPI_KEY),
+  // que entra a portales con bloqueo fuerte, y si no alcanza, el lector r.jina.ai.
+  if ((blockedPage(html) || !looksUseful(html)) && process.env.SCRAPERAPI_KEY && left() > 3000) {
+    try {
+      const r = await fetch(`https://api.scraperapi.com/?api_key=${encodeURIComponent(process.env.SCRAPERAPI_KEY)}&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(left() - 1200) });
+      log.scraper = r.status;
+      if (r.ok) { const alt = await r.text(); log.scraperLen = alt.length; if (alt && !blockedPage(alt) && (looksUseful(alt) || blockedPage(html))) { html = alt; log.used = "scraper"; } }
+    } catch (e) { log.scraper = e.name === "TimeoutError" ? "tiempo" : "error"; }
+  }
   if ((blockedPage(html) || !looksUseful(html)) && left() > 3000) {
-    const alt = await reader(url, left() - 1800);
+    const alt = await reader(url, left() - 1200);
     log.readerLen = alt.length; log.readerBlocked = blockedPage(alt);
     if (alt && !blockedPage(alt) && (looksUseful(alt) || blockedPage(html))) { html = alt; log.used = "reader"; }
   }
-  // Último intento para portales con bloqueo fuerte (ej. Argenprop): servicio de scraping, solo si hay SCRAPERAPI_KEY.
-  if ((blockedPage(html) || !looksUseful(html)) && process.env.SCRAPERAPI_KEY && left() > 3000) {
-    try {
-      const r = await fetch(`https://api.scraperapi.com/?api_key=${encodeURIComponent(process.env.SCRAPERAPI_KEY)}&country_code=ar&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(left() - 1500) });
-      if (r.ok) { const alt = await r.text(); if (!blockedPage(alt)) html = alt; }
-    } catch (e) {}
-  }
   log.ms = Date.now() - t0; log.blocked = blockedPage(html); log.useful = looksUseful(html);
   console.log("extract", JSON.stringify(log));
-  const diag = ` [detalle: sitio ${status || "sin respuesta"}${log.readerLen !== undefined ? `, lector ${reader.last}` : ""}]`;
+  const diag = ` [detalle: sitio ${status || "sin respuesta"}${log.scraper !== undefined ? `, scraper ${log.scraper}` : ""}${log.readerLen !== undefined ? `, lector ${reader.last}` : ""}]`;
   if (!html) return res.status(200).json({ blocked: true, status, error: status ? `El sitio no dejó leer el aviso (código ${status}). Pegá el texto y subí las fotos a mano.` + diag : "No pude conectarme con el sitio. Pegá el texto y subí las fotos a mano." + diag });
   if (blockedPage(html))
     return res.status(200).json({ blocked: true, error: "El sitio pidió verificación anti-robots (pasa en algunos portales grandes). Probá con el aviso en la web de la inmobiliaria o pegá el texto." + diag });
