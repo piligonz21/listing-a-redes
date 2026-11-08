@@ -111,6 +111,7 @@ figcaption button{padding:4px 9px;font-size:12px}
 .welcome .row{justify-content:center;margin-top:20px}
 .big{padding:14px 20px;font-size:16px}
 .chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.fontprev{margin-top:6px;padding:8px 10px;background:var(--field);border:1px solid var(--line);min-height:44px;line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .slide-ed{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
 .slide-ed textarea{min-height:56px}
 .pxgrid button[data-n]:not([data-n=""])::before{content:attr(data-n);position:absolute;left:0;right:0;bottom:0;background:var(--accent);color:#fff;font-size:10px;font-weight:700;text-align:center;z-index:1}
@@ -374,7 +375,8 @@ input[type=color]{width:100%;height:40px;padding:4px;border:1px solid var(--line
               <div><label for="mi_surface">Franjas y tarjetas</label><input id="mi_surface" type="color"></div>
               <div><label for="mi_ink">Títulos</label><input id="mi_ink" type="color"></div>
               <div><label for="mi_accent">Detalles</label><input id="mi_accent" type="color"></div>
-              <div><label for="mi_font">Tipografía</label><select id="mi_font"></select></div>
+              <div class="full"><label for="mi_font">Tipografía de los títulos <small style="font-weight:400;color:var(--muted)">(más de 60, todas gratis)</small></label><select id="mi_font"></select>
+                <div id="mi_fontPrev" class="fontprev" aria-hidden="true"></div></div>
               <div><label for="mi_case">Títulos en</label><select id="mi_case"><option value="normal">Normal</option><option value="mayusculas">MAYÚSCULAS</option></select></div>
               <div class="full"><label for="mi_layout">Diseño</label><select id="mi_layout"></select></div>
               <div class="full"><label for="mi_overlay">La foto va</label><select id="mi_overlay"></select></div>
@@ -1452,6 +1454,28 @@ renderTourRooms();
 /* ================= Mi marca: estilo propio, datos y pilares · Contenido del día ================= */
 const FONT_OPTS={"sans-moderna":{label:"Moderna (Montserrat)",t:F.mont(800),b:F.mont(500)},"sans-fina":{label:"Fina (Jost)",t:F.jost(300),b:F.jost(400)},
   "serif-elegante":{label:"Elegante (Cormorant)",t:F.corm(500),b:F.jost(400)},"serif-clasica":{label:"Clásica (Bodoni)",t:F.bod(400),b:F.jost(400)}};
+// Más tipografías gratis de Google Fonts. Se descargan solo cuando alguien las elige (la app no se pone lenta).
+// [nombre, peso del título, grupo]  · peso 400 = la fuente viene en un solo grosor
+const MORE_FONTS=[
+ ["Inter",700,"Sans"],["Poppins",700,"Sans"],["Raleway",700,"Sans"],["Lato",700,"Sans"],["Open Sans",700,"Sans"],["Roboto",700,"Sans"],["Nunito Sans",700,"Sans"],
+ ["Work Sans",700,"Sans"],["DM Sans",700,"Sans"],["Manrope",700,"Sans"],["Outfit",700,"Sans"],["Plus Jakarta Sans",700,"Sans"],["Urbanist",700,"Sans"],["Sora",700,"Sans"],
+ ["Archivo",700,"Sans"],["Barlow",700,"Sans"],["Josefin Sans",700,"Sans"],["League Spartan",700,"Sans"],["Syne",700,"Sans"],["Figtree",700,"Sans"],["Rubik",700,"Sans"],
+ ["Mulish",700,"Sans"],["Quicksand",700,"Sans"],["Kumbh Sans",700,"Sans"],["Red Hat Display",700,"Sans"],["Lexend",700,"Sans"],["Space Grotesk",700,"Sans"],
+ ["Oswald",600,"Condensada / impacto"],["Bebas Neue",400,"Condensada / impacto"],["Anton",400,"Condensada / impacto"],["Archivo Black",400,"Condensada / impacto"],["Abril Fatface",400,"Condensada / impacto"],
+ ["Playfair Display",700,"Serif"],["Lora",700,"Serif"],["Libre Baskerville",700,"Serif"],["DM Serif Display",400,"Serif"],["Cinzel",700,"Serif"],["Marcellus",400,"Serif"],
+ ["EB Garamond",600,"Serif"],["Cormorant",600,"Serif"],["Prata",400,"Serif"],["Fraunces",700,"Serif"],["Italiana",400,"Serif"],["Gloock",400,"Serif"],["Young Serif",400,"Serif"],
+ ["Libre Caslon Text",700,"Serif"],["Merriweather",700,"Serif"],["Crimson Pro",600,"Serif"],["Bodoni Moda",700,"Serif"],["Tenor Sans",400,"Serif"],
+ ["Great Vibes",400,"Manuscrita"],["Allura",400,"Manuscrita"],["Dancing Script",700,"Manuscrita"],["Parisienne",400,"Manuscrita"],["Pinyon Script",400,"Manuscrita"],
+ ["Sacramento",400,"Manuscrita"],["Alex Brush",400,"Manuscrita"],["Mrs Saint Delafield",400,"Manuscrita"],["Satisfy",400,"Manuscrita"],["Caveat",700,"Manuscrita"]
+];
+MORE_FONTS.forEach(([fam,w,grp])=>{ const q=`"${fam}"`, fb=grp==="Serif"?"Georgia, serif":grp==="Manuscrita"?"cursive":"Arial, sans-serif";
+  FONT_OPTS["g:"+fam]={label:fam, group:grp, family:fam, weight:w, t:s=>`${w} ${s}px ${q}, ${fb}`, b:grp==="Sans"?(s=>`400 ${s}px ${q}, ${fb}`):F.jost(400)}; });
+const fontLoads={};
+function ensureFont(key){ const o=FONT_OPTS[key]; if(!o||!o.family) return Promise.resolve();
+  if(!fontLoads[key]){ const l=document.createElement("link"); l.rel="stylesheet";
+    l.href=`https://fonts.googleapis.com/css2?family=${o.family.replace(/ /g,"+")}${o.weight>400?`:wght@400;${o.weight}`:""}&display=swap`; document.head.appendChild(l);
+    fontLoads[key]=new Promise(r=>{ l.onload=()=>Promise.all([document.fonts.load(o.t(40)),document.fonts.load(o.b(30))]).catch(()=>{}).finally(r); l.onerror=r; setTimeout(r,6000); }); }
+  return fontLoads[key]; }
 const LAYOUT_OPTS={"foto-fundida":"Foto que se funde en el color de fondo","foto-completa":"Foto completa con texto encima","banda-abajo":"Foto arriba y franja de color","marco":"Foto con marco de color","tarjeta":"Foto con tarjeta de texto","arco":"Foto en arco sobre fondo liso"};
 const OVERLAY_OPTS={"degradado-oscuro":"Oscurecida abajo","teñida":"Teñida con el color de la marca","sin-overlay":"Sin oscurecer","claro":"Aclarada"};
 // Fichas de los estilos que ya vienen en la app, para armar placas de texto (contenido del día).
@@ -1568,6 +1592,7 @@ function paint(x,W,H,tk,o){
 }
 function setMine(tk){
   MI_TK=tk?{...tk}:null;
+  if(MI_TK&&FONT_OPTS[MI_TK.titleFont]&&FONT_OPTS[MI_TK.titleFont].family){ const want=MI_TK.titleFont; ensureFont(want).then(()=>{ if(MI_TK&&MI_TK.titleFont===want) previewsAll(); }); }
   if(MI_TK){
     STYLES.mi={name:MI_TK.name||"Mi estilo", draw(x,W,H,k,c){
       if(k==="cover") paint(x,W,H,MI_TK,{kind:"cover",img:c.img,eyebrow:c.eyebrow,title:c.title});
@@ -1745,17 +1770,22 @@ $("obAnalyze").onclick=async()=>{
     :"Listo: copié tus colores. Elegí abajo la tipografía y el diseño que más se parezcan, y guardá tu marca.";
   $("obAnalyze").disabled=false; $("miEdit").hidden=false;
 };
+function previewsAll(){ schedule(); brandPreview(); if(DL.post) dailyRender(); }
 function fillMiForm(){
   $("miEdit").hidden=!MI_TK; if(!MI_TK) return;
   $("mi_name").value=MI_TK.name||"Mi estilo"; ["bg","surface","ink","accent"].forEach(k=>$("mi_"+k).value=MI_TK[k]);
-  $("mi_font").value=MI_TK.titleFont; $("mi_layout").value=MI_TK.layout; $("mi_case").value=MI_TK.titleCase; $("mi_overlay").value=MI_TK.overlay;
+  $("mi_font").value=FONT_OPTS[MI_TK.titleFont]?MI_TK.titleFont:"sans-moderna"; fontPreview(); $("mi_layout").value=MI_TK.layout; $("mi_case").value=MI_TK.titleCase; $("mi_overlay").value=MI_TK.overlay;
   $("mi_align").value=MI_TK.align||"centro"; $("mi_mix").value=MI_TK.mix||"no"; $("mi_tag").value=MI_TK.tag||"texto"; $("mi_pill").value=MI_TK.pill||"no";
   const tb=MI_TK.topBand||{style:"none"}, bb=MI_TK.bottomBand||{style:"none"};
   $("mi_top").value=tb.style||"none"; $("mi_topc").value=tb.color||MI_TK.bg; $("mi_bot").value=bb.style||"none"; $("mi_botc").value=bb.color||MI_TK.bg;
   $("mi_bandh").value=Math.round(((tb.style!=="none"?tb.h:bb.h)||0.08)*100);
 }
 const fillSel=(id,o)=>{ $(id).innerHTML=Object.entries(o).map(([k,v])=>`<option value="${k}">${typeof v==="string"?v:v.label}</option>`).join(""); };
-fillSel("mi_font",FONT_OPTS); fillSel("mi_layout",LAYOUT_OPTS); fillSel("mi_overlay",OVERLAY_OPTS);
+(()=>{ const groups={"Las de siempre":[]}; Object.entries(FONT_OPTS).forEach(([k,v])=>{ (groups[v.group||"Las de siempre"]=groups[v.group||"Las de siempre"]||[]).push(`<option value="${k}">${esc(v.label)}</option>`); });
+  $("mi_font").innerHTML=Object.entries(groups).map(([g,o])=>`<optgroup label="${g}">${o.join("")}</optgroup>`).join(""); })();
+function fontPreview(){ const k=$("mi_font").value, o=FONT_OPTS[k], el=$("mi_fontPrev"); if(!o||!el) return; ensureFont(k);
+  el.style.font=o.t(26); el.textContent="Casa en barrio cerrado"; }
+$("mi_font").addEventListener("change",fontPreview); fillSel("mi_layout",LAYOUT_OPTS); fillSel("mi_overlay",OVERLAY_OPTS);
 ["mi_name","mi_bg","mi_surface","mi_ink","mi_accent","mi_font","mi_layout","mi_case","mi_overlay","mi_align","mi_mix","mi_tag","mi_pill","mi_top","mi_topc","mi_bot","mi_botc","mi_bandh"].forEach(id=>$(id).addEventListener("input",()=>{
   if(!MI_TK) return; const bh=parseInt($("mi_bandh").value,10)/100;
   const t={...MI_TK, name:$("mi_name").value.trim()||"Mi estilo", bg:$("mi_bg").value, surface:$("mi_surface").value, ink:$("mi_ink").value, accent:$("mi_accent").value,
