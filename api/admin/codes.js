@@ -2,6 +2,8 @@
 const { redis, getCode, saveCode, newCode, isAdmin, body } = require("../../lib/auth");
 
 module.exports = async (req, res) => {
+  const pw = process.env.ADMIN_PASSWORD || "";
+  if (pw.length < 8) return res.status(500).json({ error: "El servidor no tiene ADMIN_PASSWORD (o tiene menos de 8 caracteres). Cargala en las variables de entorno y volvé a publicar." });
   if (!isAdmin(req)) return res.status(401).json({ error: "Contraseña incorrecta." });
   try {
     if (req.method === "GET") {

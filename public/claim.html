@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tu código de acceso · Listing to Social</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="wrap" style="max-width:560px">
+  <h1>¡Gracias por tu compra!</h1>
+  <p class="lead">Este es tu código de acceso a Listing to Social. Guardá el mail: podés volver a esta página cuando quieras.</p>
+  <div class="box">
+    <p class="eyebrow">Código de acceso</p>
+    <div id="out"><p class="msg" id="msg" role="status">Buscando tu código…</p></div>
+  </div>
+  <p class="foot">Cada código funciona en hasta 2 dispositivos (por ejemplo, tu celu y tu compu). ¿Necesitás ayuda o cambiar de dispositivo? Respondé el mail de tu pedido.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const q=new URLSearchParams(location.search), o=q.get("o")||"", e=q.get("e")||"";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let tries=0;
+async function load(){
+  try{
+    const r=await fetch(`/api/claim?o=${encodeURIComponent(o)}&e=${encodeURIComponent(e)}`), j=await r.json().catch(()=>({}));
+    if(r.status===202&&tries++<20){ $("msg").textContent="Confirmando tu pago… tarda unos segundos."; return setTimeout(load,3000); }
+    if(r.status===202){ $("msg").className="msg bad"; $("msg").textContent="Tu pago todavía se está confirmando. Actualizá esta página en unos minutos."; return; }
+    if(!r.ok){ $("msg").className="msg bad"; $("msg").textContent=j.error||"Algo salió mal. Probá de nuevo."; return; }
+    $("out").innerHTML=j.codes.map(c=>`<div class="newcode"><code style="font-size:22px;letter-spacing:.08em">${esc(c)}</code>
+      <div class="row" style="margin-top:12px"><a href="/?code=${encodeURIComponent(c)}"><button class="primary">Abrir la app</button></a><button data-c="${esc(c)}">Copiar código</button></div></div>`).join("");
+    document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>navigator.clipboard.writeText(b.dataset.c).then(()=>{b.textContent="Copiado";}));
+  }catch(err){ if(tries++<20) return setTimeout(load,3000); $("msg").className="msg bad"; $("msg").textContent="Sin conexión. Actualizá esta página."; }
+}
+if(!o||!e){ $("msg").className="msg bad"; $("msg").textContent="Este link está incompleto. Usá el link del mail de tu pedido."; } else load();
+</script>
+</body>
+</html>

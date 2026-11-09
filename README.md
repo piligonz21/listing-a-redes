@@ -1,6 +1,6 @@
 `type: proyecto | created: 2026-11-02 | updated: 2026-11-02 | tags: [gsc-studio, real-estate, app]`
 
-# Listing a Redes (versión web)
+# Listing to Social (versión web)
 
 Página web: pegás el link de una propiedad y saca fotos y datos solos. Arma carrusel 4:5, 3 historias, portada de reel y captions ES/EN.
 

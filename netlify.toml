@@ -1,0 +1,38 @@
+# Netlify (free plan allows commercial use). Same code as Vercel: netlify/functions/* reuse api/*.js.
+[build]
+  publish = "public"
+  command = "node scripts/embed-app.js"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["app.html"]
+
+[[redirects]]
+  from = "/app"
+  to = "/.netlify/functions/app"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin/codes"
+  to = "/.netlify/functions/admin-codes"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/shopify/order-paid"
+  to = "/.netlify/functions/shopify-order-paid"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/t/*"
+  to = "/.netlify/functions/tour-view"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
