@@ -164,14 +164,14 @@ module.exports = async (req, res) => {
   const t0 = Date.now(), left = () => 9300 - (Date.now() - t0);
   let html = "", status = 0;
   try {
-    const r = await fetch(url, { headers: HEADERS, redirect: "follow", signal: AbortSignal.timeout(4000) });
+    const r = await fetch(url, { headers: HEADERS, redirect: "follow", signal: AbortSignal.timeout(3000) });
     status = r.status;
     if (r.ok) html = await r.text();
   } catch (e) {}
   // Algunos sitios rechazan los encabezados "de navegador" que no coinciden con el cliente real: reintento simple.
   if (!html || status === 403 || status === 401) {
     try {
-      const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "text/html", "Accept-Language": "es-AR,es;q=0.9" }, redirect: "follow", signal: AbortSignal.timeout(Math.max(500, Math.min(2500, left() - 6000))) });
+      const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "text/html", "Accept-Language": "es-AR,es;q=0.9" }, redirect: "follow", signal: AbortSignal.timeout(Math.max(500, Math.min(1500, left() - 6500))) });
       if (r.ok) { html = await r.text(); status = r.status; } else if (!status) status = r.status;
     } catch (e) {}
   }
